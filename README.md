@@ -6,22 +6,21 @@ This project builds on top of ChatDev which is just able to create simple games:
 https://github.com/OpenBMB/ChatDev
 
 ### Getting started:
-1. Use ```python=3.10.11```
-2. Create new virtual environment with ```virtualenv venv```
-3. Activate new virtual environment
-4. Install required dependencies: ```pip install -r requirements.txt````
-5. Before committing changes, update [requirements.txt](requirements.txt) file
-6. Add OpenAI credentials in [.env](.env) 
+1. Install [poetry](https://python-poetry.org/docs/basic-usage/) 
+2. Make sure ``poetry`` is added to path 
+3. Clone project and execute ``poetry install`` and afterwards ``poetry shell``
+4. When adding new packages use ``poetry add <NAME>`` instead of usual ``pip install <NAME>``
+5. Add OpenAI credentials in [.env](.env) 
     ```
     OPENAI_ORG=
     OPENAI_API_KEY=
     ```
 
-### Project Organization & Tasks:
-- Benedikt: 
-- David:
-- Lasse:
-- Eric: 
+### Project Members:
+- Benedikt 
+- David
+- Lasse
+- Eric 
 
 ### ToDo's:
-- 
+- View [Notion](https://www.notion.so/a1c5a5cbbd014e57803101a263f437f8?v=9467436d72d24f279e815116d5683bbf)
