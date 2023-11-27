@@ -1,49 +1,43 @@
-import threading
-import requests
-import io
-from contextlib import redirect_stdout, redirect_stderr
+import docker
+import os
 
-def execute_code(code):
-    # Redirect the standard output and error to capture them
-    f = io.StringIO()
-    with redirect_stdout(f), redirect_stderr(f):
-        try:
-            # Execute the code in a separate thread
-            thread = threading.Thread(target=exec, args=(code,))
-            thread.start()
-            thread.join(timeout=10)  # Adjust the timeout as needed
-            if thread.is_alive():
-                return {'success': False, 'output': 'Execution timed out.'}
-        except Exception as e:
-            # Capture any exceptions
-            return {'success': False, 'output': str(e)}
+def execute_python_webserver(file_path):
+    """Execute a Python web server file in a Docker container."""
+    # Assuming the workspace is the parent directory of the file
+    workspace_folder = os.path.dirname(file_path)
 
-    # Capture the output
-    output = f.getvalue()
-    return {'success': True, 'output': output}
+    # Extract the filename from the path
+    file_name = os.path.basename(file_path)
 
-# Example usage
-if __name__ == "__main__":
-    webserver_code = """
-from fastapi import FastAPI
-import uvicorn
+    print(f"Executing file '{file_name}' in workspace '{workspace_folder}'")
 
-app = FastAPI()
+    if not file_name.endswith(".py"):
+        return "Error: Invalid file type. Only .py files are allowed."
 
-@app.get("/")
-async def read_root():
-    return {"Hello": "World"}
+    if not os.path.isfile(file_path):
+        return f"Error: File '{file_name}' does not exist."
 
-# Start the web server
-uvicorn.run(app, port=8000)
-"""
-    result = execute_code(webserver_code)
-    print("Execution Successful:", result['success'])
-    print("Output:\n", result['output'])
-
-    # Example request to the server
     try:
-        response = requests.get("http://localhost:8000")
-        print("Response from server:", response.json())
-    except requests.exceptions.RequestException as e:
-        print("Error making request:", e)
+        client = docker.from_env()
+
+        # Replace 'python:3.10' with an image that contains all the necessary dependencies
+        container = client.containers.run(
+            'python:3.10',  # Replace with your custom image name
+            f'python {file_name}',
+            ports={'8000/tcp': 8000},  # Map the container port to a host port, adjust as needed
+            volumes={os.path.abspath(workspace_folder): {'bind': '/workspace', 'mode': 'ro'}},
+            working_dir='/workspace',
+            stderr=True,
+            stdout=True,
+            detach=True,
+        )
+
+        print(f"Container started: {container.id}")
+        return f"Web server running in container {container.id}"
+
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+# Usage
+output = execute_python_webserver("C:\\Users\\Lasse\\Desktop\\5. Semester\\NLP\\Agentcy\\Multi-Agent-Frontend-Dev\\execution-environment-tests\\test.py")
+print(output)
