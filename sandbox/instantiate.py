@@ -1,15 +1,14 @@
 import logging
 import os
+import time
 from src.utils import write_str_to_file
 from sandbox.dockergenerator import execute_python
-from sandbox.logger import setup_logger
 import docker 
 
-class PythonSandbox:
+class Sandbox:
     """
-    A class for creating and managing a Python sandbox environment using Docker.
+    A class for creating and sandbox environments using Docker.
     """
-
     def __init__(self, subfolder_path: str = "backend") -> None:
         """
         Initializes the Python sandbox environment.
@@ -22,9 +21,20 @@ class PythonSandbox:
         if not os.path.exists(self.directory_path):
             os.makedirs(self.directory_path)
 
-        setup_logger(self.directory_path)
+    @property
+    def path(self):
+        return self.directory_path
+    
+    @property
+    def type(self):
+        return self.directory_path
+    
+    pass
 
-
+class PythonSandbox(Sandbox):
+    """
+    A class for creating and managing a Python sandbox environment using Docker.
+    """
     def trigger_execution_pipeline(self, fulltext_code: str) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given Python code.
@@ -38,6 +48,7 @@ class PythonSandbox:
         logging.info(f"New Python Pipeline request for code: {fulltext_code}")
         file_path = write_str_to_file(fulltext_code, self.directory_path, ".py")
         running_container = execute_python(file_path)
+        time.sleep(1) # breathing time so logs can be displayed
         return running_container
 
     def init_basic_environment(self) -> docker.models.containers.Container:
