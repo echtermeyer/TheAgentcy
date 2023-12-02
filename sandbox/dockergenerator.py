@@ -39,7 +39,7 @@ def extract_port_from_string(script: str) -> str:
             return match.group(1)
     return '8000'
 
-def create_dockerfile_bytes(script_name: str, dependencies: Set[str], port: str) -> BytesIO:
+def create_dockerfile_bytes_python(script_name: str, dependencies: Set[str], port: str) -> BytesIO:
     """
     Creates a Dockerfile as a BytesIO object.
 
@@ -54,12 +54,35 @@ def create_dockerfile_bytes(script_name: str, dependencies: Set[str], port: str)
     dockerfile_str = (
         "FROM python:3.9-slim\n"
         "WORKDIR /app\n"
-        "COPY . /app\n"
-        f"RUN pip install --no-cache-dir {' '.join(dependencies)}\n"
+        f"COPY . /app\n"
         f"EXPOSE {port}\n"
+        f"RUN pip install --no-cache-dir wheel\n"
+        f"RUN pip install --no-cache-dir {' '.join(dependencies)}\n"
         f'CMD ["python", "{script_name}"]\n'
     )
     return BytesIO(dockerfile_str.encode('utf-8'))
+
+def create_dockerfile_bytes_frontend(port: str) -> BytesIO:
+    """
+    Creates a Dockerfile for an Nginx server as a BytesIO object.
+
+    Args:
+        html_script_name (str): The name of the HTML script.
+        working_directory (str): The working directory where the script is located.
+        port (str): The port number to expose.
+
+    Returns:
+        BytesIO: The Dockerfile as a BytesIO object.
+    """
+    dockerfile_str = (
+        "FROM nginx:alpine\n"
+        f"COPY . .\n"
+        f"EXPOSE {port}\n"
+        f'CMD ["nginx", "-g", "daemon off;"]\n'
+    )
+
+    return BytesIO(dockerfile_str.encode('utf-8'))
+
 
 def execute_python(input_data: str) -> Any:
     """
@@ -78,7 +101,7 @@ def execute_python(input_data: str) -> Any:
 
         dependencies = extract_dependencies_from_string(script_string)
         port = extract_port_from_string(script_string)
-        dockerfile_bytes = create_dockerfile_bytes(script_name, dependencies, port)
+        dockerfile_bytes = create_dockerfile_bytes_python(script_name, dependencies, port)
 
         logging.info(f"Parsing file: {script_name}.")
 
@@ -96,6 +119,40 @@ def execute_python(input_data: str) -> Any:
         logging.error(f"Error in execute_python: {str(e)}")
         return f"Error: {str(e)}"
 
+def execute_frontend(input_data):
+    """
+    Executes a Frontend(HTML) script in a Docker container.
+
+    Args:
+        input_data (str): The HTML script as a string or a path to the script file.
+
+    Returns:
+        Any: The Docker container object or an error message.
+    """
+    try:
+        workspace_folder, script_name, script_string = prepare_script_workspace(input_data)
+        client = docker.from_env()
+        IMAGE_TAG = "nginx_webserver_image:latest"
+
+        port = 80
+        dockerfile_bytes = create_dockerfile_bytes_frontend(port)
+
+        logging.info(f"Parsing file: {script_name}.")
+
+        # Remove existing container if exists
+        remove_existing_container_and_image(client, IMAGE_TAG)
+
+        # Build and run the Docker image
+        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port)
+        
+        logging.info(f"Container {container.id[:6]} started successfully.")
+
+        return container
+
+    except Exception as e:
+        logging.error(f"Error in execute_frontend: {str(e)}")
+        return f"Error: {str(e)}"
+
 def prepare_script_workspace(input_data: str) -> Tuple[str, str, str]:
     """
     Prepares the workspace for the Python script.
@@ -106,7 +163,7 @@ def prepare_script_workspace(input_data: str) -> Tuple[str, str, str]:
     Returns:
         Tuple[str, str, str]: A tuple containing the workspace folder path, script name, and script string.
     """
-    script_name = "script.py"
+    script_name = ""
 
     if os.path.isfile(input_data):
         workspace_folder = os.path.dirname(input_data)
@@ -116,8 +173,6 @@ def prepare_script_workspace(input_data: str) -> Tuple[str, str, str]:
         workspace_folder = tempfile.mkdtemp()
         script_string = input_data
         write_file(os.path.join(workspace_folder, script_name), script_string)
-
-    validate_script_name(script_name)
 
     logging.info(f"Preparing '{script_name}' in workspace '{workspace_folder}'")
 
@@ -146,19 +201,6 @@ def write_file(file_path: str, content: str) -> None:
     """
     with open(file_path, 'w') as file:
         file.write(content)
-
-def validate_script_name(script_name: str) -> None:
-    """
-    Validates the script file name.
-
-    Args:
-        script_name (str): The script file name.
-
-    Raises:
-        ValueError: If the script file name does not end with '.py'.
-    """
-    if not script_name.endswith(".py"):
-        raise ValueError("Error: Invalid file type.")
 
 def remove_existing_container_and_image(client: docker.DockerClient, image_tag: str) -> None:
     """
@@ -208,10 +250,9 @@ def build_and_run_container(client: docker.DockerClient, workspace_folder: str, 
     return client.containers.run(
         image.id,
         ports={f"{port}/tcp": int(port)},
-        volumes={os.path.abspath(workspace_folder): {'bind': '/app', 'mode': 'ro'}},
-        working_dir='/app',
+        volumes={os.path.abspath(workspace_folder): {'bind': '/usr/share/nginx/html/'}},
+        working_dir='/usr/share/nginx/html/',
         stderr=True,
         stdout=True,
         detach=True,
     )
-
