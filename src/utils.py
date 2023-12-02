@@ -7,7 +7,7 @@ def write_str_to_file(string: str, path: str, file_ending: str) -> str:
         os.makedirs(path)
 
     # Generate a unique filename
-    filename = "gpt_code_backend" + file_ending
+    filename = "index" + file_ending
 
     # Construct the full file path
     full_path = os.path.join(path, filename)

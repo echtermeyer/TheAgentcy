@@ -2,13 +2,17 @@ import logging
 import os
 import time
 from src.utils import write_str_to_file
-from sandbox.dockergenerator import execute_python
+from sandbox.dockergenerator import execute_python, execute_frontend
 import docker 
 
-class Sandbox:
+from abc import ABC, abstractmethod
+import os
+
+class Sandbox(ABC):
     """
-    A class for creating and sandbox environments using Docker.
+    A class for creating sandbox environments using Docker.
     """
+
     def __init__(self, subfolder_path: str = "backend") -> None:
         """
         Initializes the Python sandbox environment.
@@ -21,20 +25,39 @@ class Sandbox:
         if not os.path.exists(self.directory_path):
             os.makedirs(self.directory_path)
 
+        self.setup_sandbox()
+
+    @abstractmethod
+    def setup_sandbox(self):
+        """
+        Abstract method to setup the sandbox environment.
+        Subclasses should provide their own implementation.
+        """
+        pass
+
+    @abstractmethod
+    def trigger_execution_pipeline(self):
+        """
+        Abstract method to setup the sandbox environment.
+        Subclasses should provide their own implementation.
+        """
+        pass
+
     @property
     def path(self):
         return self.directory_path
-    
+
     @property
     def type(self):
         return self.directory_path
-    
-    pass
 
 class PythonSandbox(Sandbox):
     """
     A class for creating and managing a Python sandbox environment using Docker.
     """
+    def __init__(self, subfolder_path: str = "backend") -> None:
+        super().__init__(subfolder_path)
+
     def trigger_execution_pipeline(self, fulltext_code: str) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given Python code.
@@ -51,7 +74,7 @@ class PythonSandbox(Sandbox):
         time.sleep(1) # breathing time so logs can be displayed
         return running_container
 
-    def init_basic_environment(self) -> docker.models.containers.Container:
+    def setup_sandbox(self) -> None:
         """
         Initializes a basic Python Docker environment.
 
@@ -59,5 +82,36 @@ class PythonSandbox(Sandbox):
             docker.models.containers.Container: The Docker container object.
         """
         logging.info(f"Init Container created for backend.")
-        innit_container = execute_python("from fastapi import FastAPI\nimport uvicorn\napp = FastAPI()\n@app.get('/')\nasync def read_root():\n\treturn 'Setup Successfull!'\nuvicorn.run(app, host='0.0.0.0', port=8000)")
-        return innit_container
+        execute_python("from fastapi import FastAPI\nimport uvicorn")
+
+class FrontendSandbox(Sandbox):
+    """
+    A class for creating and managing a Python sandbox environment using Docker.
+    """
+    def __init__(self, subfolder_path: str = "frontend") -> None:
+        super().__init__(subfolder_path)
+
+    def trigger_execution_pipeline(self, fulltext_html_code: str) -> docker.models.containers.Container:
+        """
+        Triggers the execution pipeline for the given Python code.
+
+        Args:
+            fulltext_code (str): The Python code to be executed.
+
+        Returns:
+            docker.models.containers.Container: The Docker container object.
+        """
+        logging.info(f"New Frontend Pipeline request for code: {fulltext_html_code}")
+        file_path = write_str_to_file(fulltext_html_code, self.directory_path, ".html")
+        running_container = execute_frontend(file_path)
+        time.sleep(1) # breathing time so logs can be displayed
+        return running_container
+
+    def setup_sandbox(self) -> None:
+        """
+        Initializes a basic Python Docker environment.
+
+        Returns:
+            docker.models.containers.Container: The Docker container object.
+        """
+        logging.info(f"Init for frontend. (no container here)")
