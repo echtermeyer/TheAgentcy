@@ -2,7 +2,7 @@ from sandbox.instantiate import PythonSandbox, FrontendSandbox
 from sandbox.logger import Logger
 
 sandbox_backend = PythonSandbox()
-sandbox_frontend= FrontendSandbox()
+sandbox_frontend = FrontendSandbox()
 
 startup_logger = Logger()
 
@@ -58,7 +58,7 @@ frontend_string = """
 """
 
 backend_container = sandbox_backend.trigger_execution_pipeline(backend_string)
-print(backend_container.logs(tail=10).decode('utf-8'))
+print(backend_container.logs(tail=10).decode("utf-8"))
 
 frontend_container = sandbox_frontend.trigger_execution_pipeline(frontend_string)
-print(frontend_container.logs(tail=10).decode('utf-8'))
+print(frontend_container.logs(tail=10).decode("utf-8"))

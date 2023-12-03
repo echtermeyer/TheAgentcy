@@ -3,10 +3,11 @@ import os
 import time
 from src.utils import write_str_to_file
 from sandbox.dockergenerator import execute_python, execute_frontend
-import docker 
+import docker
 
 from abc import ABC, abstractmethod
 import os
+
 
 class Sandbox(ABC):
     """
@@ -51,14 +52,18 @@ class Sandbox(ABC):
     def type(self):
         return self.directory_path
 
+
 class PythonSandbox(Sandbox):
     """
     A class for creating and managing a Python sandbox environment using Docker.
     """
+
     def __init__(self, subfolder_path: str = "backend") -> None:
         super().__init__(subfolder_path)
 
-    def trigger_execution_pipeline(self, fulltext_code: str) -> docker.models.containers.Container:
+    def trigger_execution_pipeline(
+        self, fulltext_code: str
+    ) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given Python code.
 
@@ -71,7 +76,7 @@ class PythonSandbox(Sandbox):
         logging.info(f"New Python Pipeline request for code: {fulltext_code}")
         file_path = write_str_to_file(fulltext_code, self.directory_path, ".py")
         running_container = execute_python(file_path)
-        time.sleep(1) # breathing time so logs can be displayed
+        time.sleep(1)  # breathing time so logs can be displayed
         return running_container
 
     def setup_sandbox(self) -> None:
@@ -84,14 +89,18 @@ class PythonSandbox(Sandbox):
         logging.info(f"Init Container created for backend.")
         execute_python("from fastapi import FastAPI\nimport uvicorn")
 
+
 class FrontendSandbox(Sandbox):
     """
     A class for creating and managing a Python sandbox environment using Docker.
     """
+
     def __init__(self, subfolder_path: str = "frontend") -> None:
         super().__init__(subfolder_path)
 
-    def trigger_execution_pipeline(self, fulltext_html_code: str) -> docker.models.containers.Container:
+    def trigger_execution_pipeline(
+        self, fulltext_html_code: str
+    ) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given Python code.
 
@@ -104,7 +113,7 @@ class FrontendSandbox(Sandbox):
         logging.info(f"New Frontend Pipeline request for code: {fulltext_html_code}")
         file_path = write_str_to_file(fulltext_html_code, self.directory_path, ".html")
         running_container = execute_frontend(file_path)
-        time.sleep(1) # breathing time so logs can be displayed
+        time.sleep(1)  # breathing time so logs can be displayed
         return running_container
 
     def setup_sandbox(self) -> None:

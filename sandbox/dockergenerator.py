@@ -6,6 +6,7 @@ import tempfile
 from typing import Any, Set, Tuple
 import logging
 
+
 def extract_dependencies_from_string(script: str) -> Set[str]:
     """
     Extracts Python module dependencies from a script string.
@@ -18,10 +19,11 @@ def extract_dependencies_from_string(script: str) -> Set[str]:
     """
     dependencies = set()
     for line in script.splitlines():
-        matches = re.findall(r'^import (\w+)|^from (\w+)', line)
+        matches = re.findall(r"^import (\w+)|^from (\w+)", line)
         for match in matches:
             dependencies.add(match[0] or match[1])
     return dependencies
+
 
 def extract_port_from_string(script: str) -> str:
     """
@@ -34,12 +36,15 @@ def extract_port_from_string(script: str) -> str:
         str: The port number as a string, defaults to '8000' if not found.
     """
     for line in script.splitlines():
-        match = re.search(r'port=(\d+)', line)
+        match = re.search(r"port=(\d+)", line)
         if match:
             return match.group(1)
-    return '8000'
+    return "8000"
 
-def create_dockerfile_bytes_python(script_name: str, dependencies: Set[str], port: str) -> BytesIO:
+
+def create_dockerfile_bytes_python(
+    script_name: str, dependencies: Set[str], port: str
+) -> BytesIO:
     """
     Creates a Dockerfile as a BytesIO object.
 
@@ -60,7 +65,8 @@ def create_dockerfile_bytes_python(script_name: str, dependencies: Set[str], por
         f"RUN pip install --no-cache-dir {' '.join(dependencies)}\n"
         f'CMD ["python", "{script_name}"]\n'
     )
-    return BytesIO(dockerfile_str.encode('utf-8'))
+    return BytesIO(dockerfile_str.encode("utf-8"))
+
 
 def create_dockerfile_bytes_frontend(port: str) -> BytesIO:
     """
@@ -81,7 +87,7 @@ def create_dockerfile_bytes_frontend(port: str) -> BytesIO:
         f'CMD ["nginx", "-g", "daemon off;"]\n'
     )
 
-    return BytesIO(dockerfile_str.encode('utf-8'))
+    return BytesIO(dockerfile_str.encode("utf-8"))
 
 
 def execute_python(input_data: str) -> Any:
@@ -95,13 +101,17 @@ def execute_python(input_data: str) -> Any:
         Any: The Docker container object or an error message.
     """
     try:
-        workspace_folder, script_name, script_string = prepare_script_workspace(input_data)
+        workspace_folder, script_name, script_string = prepare_script_workspace(
+            input_data
+        )
         client = docker.from_env()
         IMAGE_TAG = "python_webserver_image:latest"
 
         dependencies = extract_dependencies_from_string(script_string)
         port = extract_port_from_string(script_string)
-        dockerfile_bytes = create_dockerfile_bytes_python(script_name, dependencies, port)
+        dockerfile_bytes = create_dockerfile_bytes_python(
+            script_name, dependencies, port
+        )
 
         logging.info(f"Parsing file: {script_name}.")
 
@@ -109,8 +119,10 @@ def execute_python(input_data: str) -> Any:
         remove_existing_container_and_image(client, IMAGE_TAG)
 
         # Build and run the Docker image
-        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port)
-        
+        container = build_and_run_container(
+            client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port
+        )
+
         logging.info(f"Container {container.id[:6]} started successfully.")
 
         return container
@@ -118,6 +130,7 @@ def execute_python(input_data: str) -> Any:
     except Exception as e:
         logging.error(f"Error in execute_python: {str(e)}")
         return f"Error: {str(e)}"
+
 
 def execute_frontend(input_data):
     """
@@ -130,7 +143,9 @@ def execute_frontend(input_data):
         Any: The Docker container object or an error message.
     """
     try:
-        workspace_folder, script_name, script_string = prepare_script_workspace(input_data)
+        workspace_folder, script_name, script_string = prepare_script_workspace(
+            input_data
+        )
         client = docker.from_env()
         IMAGE_TAG = "nginx_webserver_image:latest"
 
@@ -143,8 +158,10 @@ def execute_frontend(input_data):
         remove_existing_container_and_image(client, IMAGE_TAG)
 
         # Build and run the Docker image
-        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port)
-        
+        container = build_and_run_container(
+            client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port
+        )
+
         logging.info(f"Container {container.id[:6]} started successfully.")
 
         return container
@@ -152,6 +169,7 @@ def execute_frontend(input_data):
     except Exception as e:
         logging.error(f"Error in execute_frontend: {str(e)}")
         return f"Error: {str(e)}"
+
 
 def prepare_script_workspace(input_data: str) -> Tuple[str, str, str]:
     """
@@ -178,6 +196,7 @@ def prepare_script_workspace(input_data: str) -> Tuple[str, str, str]:
 
     return workspace_folder, script_name, script_string
 
+
 def read_file(file_path: str) -> str:
     """
     Reads and returns the content of a file.
@@ -188,8 +207,9 @@ def read_file(file_path: str) -> str:
     Returns:
         str: The content of the file.
     """
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         return file.read()
+
 
 def write_file(file_path: str, content: str) -> None:
     """
@@ -199,10 +219,13 @@ def write_file(file_path: str, content: str) -> None:
         file_path (str): The path to the file.
         content (str): The content to be written.
     """
-    with open(file_path, 'w') as file:
+    with open(file_path, "w") as file:
         file.write(content)
 
-def remove_existing_container_and_image(client: docker.DockerClient, image_tag: str) -> None:
+
+def remove_existing_container_and_image(
+    client: docker.DockerClient, image_tag: str
+) -> None:
     """
     Removes an existing Docker container with the specified image tag.
 
@@ -214,8 +237,9 @@ def remove_existing_container_and_image(client: docker.DockerClient, image_tag: 
         containers = client.containers.list(all=True)
         for container in containers:
             if container.image.tags and image_tag in container.image.tags:
-
-                logging.info(f"Detected previous container: {container.id[:6]} deleting and replacing it now.")
+                logging.info(
+                    f"Detected previous container: {container.id[:6]} deleting and replacing it now."
+                )
 
                 container.stop()
                 container.remove()
@@ -223,9 +247,18 @@ def remove_existing_container_and_image(client: docker.DockerClient, image_tag: 
                 client.images.remove(image.id)
 
     except Exception as e:
-        logging.error(f"Error removing Docker image or container with tag {image_tag}: {str(e)}")
+        logging.error(
+            f"Error removing Docker image or container with tag {image_tag}: {str(e)}"
+        )
 
-def build_and_run_container(client: docker.DockerClient, workspace_folder: str, dockerfile_bytes: BytesIO, image_tag: str, port: str) -> docker.models.containers.Container:
+
+def build_and_run_container(
+    client: docker.DockerClient,
+    workspace_folder: str,
+    dockerfile_bytes: BytesIO,
+    image_tag: str,
+    port: str,
+) -> docker.models.containers.Container:
     """
     Builds and runs a Docker container.
 
@@ -244,14 +277,14 @@ def build_and_run_container(client: docker.DockerClient, workspace_folder: str, 
         fileobj=dockerfile_bytes,
         rm=True,
         tag=image_tag,
-        quiet=False
+        quiet=False,
     )
 
     return client.containers.run(
         image.id,
         ports={f"{port}/tcp": int(port)},
-        volumes={os.path.abspath(workspace_folder): {'bind': '/usr/share/nginx/html/'}},
-        working_dir='/usr/share/nginx/html/',
+        volumes={os.path.abspath(workspace_folder): {"bind": "/usr/share/nginx/html/"}},
+        working_dir="/usr/share/nginx/html/",
         stderr=True,
         stdout=True,
         detach=True,
