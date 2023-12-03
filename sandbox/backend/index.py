@@ -3,9 +3,11 @@ import uvicorn
 
 app = FastAPI()
 
+
 @app.get("/")
 async def read_root():
-    return {"Hello": "World"}
+    return "Backend running!"
+
 
 # Start the web server
-uvicorn.run(app, port=8000)
+uvicorn.run(app, host="0.0.0.0", port=8000)

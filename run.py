@@ -4,7 +4,7 @@ from src.pipeline import Pipeline
 
 
 def run(args):
-    pipeline = Pipeline()
+    pipeline = Pipeline(args.description)
     pipeline.start()
 
 
@@ -16,7 +16,7 @@ if __name__ == "__main__":
         type=str,
         default="No webapp yet",
         help="Full-stack webapp description",
-        required=False,
+        required=True,
     )
 
     run(parser.parse_args())

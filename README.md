@@ -10,7 +10,8 @@ https://github.com/OpenBMB/ChatDev
 2. Make sure ``poetry`` is added to path 
 3. Clone project and execute ``poetry install`` and afterwards ``poetry shell``
 4. When adding new packages use ``poetry add <NAME>`` instead of usual ``pip install <NAME>``
-5. Add OpenAI credentials in [.env](.env) 
+5. Create .venv in project ``poetry config virtualenvs.in-project = true``
+6. Add OpenAI credentials in [.env](.env) 
     ```
     OPENAI_ORG=
     OPENAI_API_KEY=

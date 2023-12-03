@@ -1,53 +1,62 @@
 [
-    {
-      "name": "Martina",
-      "varname": "orchestrator",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Pepko",
-      "varname": "database_dev",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Testko",
-      "varname": "database_test",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Dokko",
-      "varname": "database_doc",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Günther",
-      "varname": "backend_dev",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Testher",
-      "varname": "backend_test",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Dokher",
-      "varname": "backend_doc",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Ludwig",
-      "varname": "frontend_dev",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Testwig",
-      "varname": "frontend_test",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Dokwig",
-      "varname": "frontend_doc",
-      "model": "gpt-3.5-turbo"
-    }
-  ]
-  
+  {
+    "name": "Martina",
+    "varname": "orchestrator",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Pepko",
+    "varname": "database_dev",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Testko",
+    "varname": "database_test",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.2
+  },
+  {
+    "name": "Dokko",
+    "varname": "database_doc",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.5
+  },
+  {
+    "name": "Günther",
+    "varname": "backend_dev",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Testher",
+    "varname": "backend_test",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.2
+  },
+  {
+    "name": "Dokher",
+    "varname": "backend_doc",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.5
+  },
+  {
+    "name": "Ludwig",
+    "varname": "frontend_dev",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Testwig",
+    "varname": "frontend_test",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.2
+  },
+  {
+    "name": "Dokwig",
+    "varname": "frontend_doc",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.5
+  }
+]
