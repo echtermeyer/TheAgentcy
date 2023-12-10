@@ -47,9 +47,6 @@ class Sandbox(ABC):
     def path(self):
         return self.directory_path
 
-    @property
-    def type(self):
-        return self.directory_path
 
 class PythonSandbox(Sandbox):
     """
@@ -86,7 +83,7 @@ class PythonSandbox(Sandbox):
 
 class FrontendSandbox(Sandbox):
     """
-    A class for creating and managing a Python sandbox environment using Docker.
+    A class for creating and managing a Nginx sandbox environment using Docker.
     """
     def __init__(self, subfolder_path: str = "frontend") -> None:
         super().__init__(subfolder_path)
@@ -96,7 +93,7 @@ class FrontendSandbox(Sandbox):
         Triggers the execution pipeline for the given Python code.
 
         Args:
-            fulltext_code (str): The Python code to be executed.
+            fulltext_code (str): The HTML code to be executed.
 
         Returns:
             docker.models.containers.Container: The Docker container object.
@@ -109,7 +106,7 @@ class FrontendSandbox(Sandbox):
 
     def setup_sandbox(self) -> None:
         """
-        Initializes a basic Python Docker environment.
+        Initializes a basic HTML Docker environment.
 
         Returns:
             docker.models.containers.Container: The Docker container object.
