@@ -8,5 +8,6 @@ Frontend: how the frontend should look and what functionalities there are
 
 Do not provide any additional output or comments.
 Now this is the request by the user:
+{user_prompt} 
 
-{User_Prompt} 
+{format_instructions}
