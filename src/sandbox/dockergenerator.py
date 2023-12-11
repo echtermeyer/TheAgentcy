@@ -1,10 +1,11 @@
-from io import BytesIO
-import docker
 import os
 import re
-import tempfile
-from typing import Any, Set, Tuple
+import docker
 import logging
+import tempfile
+
+from io import BytesIO
+from typing import Any, Set, Tuple
 
 
 def extract_dependencies_from_string(script: str) -> Set[str]:
@@ -105,7 +106,7 @@ def execute_python(input_data: str) -> Any:
             input_data
         )
         client = docker.from_env()
-        IMAGE_TAG = "python_webserver_image:latest"
+        IMAGE_TAG = "backend_python:latest"
 
         dependencies = extract_dependencies_from_string(script_string)
         port = extract_port_from_string(script_string)
@@ -147,7 +148,7 @@ def execute_frontend(input_data):
             input_data
         )
         client = docker.from_env()
-        IMAGE_TAG = "nginx_webserver_image:latest"
+        IMAGE_TAG = "frontend_nginx:latest"
 
         port = 80
         dockerfile_bytes = create_dockerfile_bytes_frontend(port)
@@ -280,6 +281,9 @@ def build_and_run_container(
         quiet=False,
     )
 
+    # Extracting the container name from the image tag
+    container_name = image_tag.split(":")[0]
+
     return client.containers.run(
         image.id,
         ports={f"{port}/tcp": int(port)},
@@ -288,4 +292,5 @@ def build_and_run_container(
         stderr=True,
         stdout=True,
         detach=True,
+        name=container_name,  # Setting the custom container name
     )
