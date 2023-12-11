@@ -2,13 +2,13 @@ import json
 
 from pathlib import Path
 
-from src.agents import Agent, ConversationWrapper
+from src.utils import *
+from src.agents import Agent, HumanConversationWrapper, ConversationWrapper
 
 
 class Pipeline:
-    def __init__(self, description: str) -> None:
+    def __init__(self, description: str = None) -> None:
         self.description = description
-        print(self.description)
         self.root = Path(__file__).parent.parent
 
         self.__setup_agents()
@@ -26,29 +26,59 @@ class Pipeline:
                     name=agent["name"],
                     model=agent["model"],
                     temperature=agent["temperature"],
-                    prompt=self.root / f"src/prompts/{agent['varname']}.txt",
+                    prompt=self.root / f"src/characters/{agent['varname']}.txt",
                 ),
             )
 
     def start(self) -> None:
         """Start developing process"""
-        self._work(self.orchestrator, self.database_dev, kind="instruct")
-        self._work(self.database_dev, self.database_test, kind="develop")
-        self._work(self.database_test, self.database_doc, kind="explain")
-        self._work(self.database_doc, self.orchestrator, kind="present")
 
-    def _work(self, agent1: Agent, agent2: Agent, kind: str) -> str:
-        print(f"{agent1.name} is working with {agent2.name}")
+        # Retrieve and understand requirements from user
+        conv1 = HumanConversationWrapper(self.orchestrator)
+        conv1.start()
 
-        conversation = ConversationWrapper(agent1, agent2, max_turns=2)
+        # Create tasks for database, backend & frontend
+        with open(self.root / "src/prompts/po_tasks.txt", "r") as f:
+            prompt = f.read()
 
-        if kind == "instruct":
-            pass
-        elif kind == "develop":
-            conversation.start(self.description)
-        elif kind == "explain":
-            pass
-        elif kind == "present":
-            pass
-        else:
-            raise ValueError("Conversation is not supported")
+        tasks = self.orchestrator.answer(prompt)
+        tasks = extract_json_from_str(tasks)
+
+        # Start database development
+        conv2 = ConversationWrapper(self.database_dev, self.database_test)
+        code_database = conv2.start(tasks["database"])  # do something with the code
+
+        # Documentation for database
+        conv3 = ConversationWrapper(self.database_doc, self.database_test)
+        starter = f"""
+        Write down questions you need to know in order to create an excellent and detailed documentation for the
+        database layer of the application. The project you are working on is about: {tasks['database']}.
+        """
+        documentation_database = conv3.start(starter)
+        self.orchestrator.inject_message(documentation_database, kind="human")
+
+        # Start backend development
+        conv4 = ConversationWrapper(self.backend_dev, self.backend_test)
+        code_database = conv4.start(tasks["backend"])  # do something with the code
+
+        # Documentation for backend
+        conv5 = ConversationWrapper(self.backend_doc, self.backend_test)
+        starter = f"""
+        Write down questions you need to know in order to create an excellent and detailed documentation for the 
+        backend layer of the application. The project you are working on is about: {tasks['backend']}.
+        """
+        documentation_backend = conv5.start(starter)
+        self.orchestrator.inject_message(documentation_backend, kind="human")
+
+        # Start backend development
+        conv6 = ConversationWrapper(self.frontend_dev, self.frontend_test)
+        code_database = conv6.start(tasks["database"])  # do something with the code
+
+        # Documentation for backend
+        conv7 = ConversationWrapper(self.frontend_doc, self.frontend_test)
+        starter = f"""
+        Write down questions you need to know in order to create an excellent and detailed documentation for the
+        database layer of the application. The project you are working on is about: {tasks['database']}.
+        """
+        documentation_frontend = conv7.start(starter)
+        self.orchestrator.inject_message(documentation_frontend, kind="human")

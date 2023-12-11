@@ -1,5 +1,5 @@
-from sandbox.instantiate import PythonSandbox, FrontendSandbox
-from sandbox.logger import Logger
+from src.sandbox.logger import Logger
+from src.sandbox.instantiate import PythonSandbox, FrontendSandbox
 
 sandbox_backend = PythonSandbox()
 sandbox_frontend = FrontendSandbox()

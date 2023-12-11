@@ -1,12 +1,12 @@
-import logging
-import os
 import time
-from src.utils import write_str_to_file
-from sandbox.dockergenerator import execute_python, execute_frontend
 import docker
+import logging
 
+from pathlib import Path
 from abc import ABC, abstractmethod
-import os
+
+from src.utils import write_str_to_file
+from src.sandbox.dockergenerator import execute_python, execute_frontend
 
 
 class Sandbox(ABC):
@@ -21,10 +21,9 @@ class Sandbox(ABC):
         Args:
             subfolder_path (str): The subfolder path for the sandbox environment.
         """
-        current_file_dir = os.path.dirname(__file__)
-        self.directory_path = os.path.join(current_file_dir, subfolder_path)
-        if not os.path.exists(self.directory_path):
-            os.makedirs(self.directory_path)
+
+        self.directory_path = Path(__file__).parent.parent.parent / f"output/{subfolder_path}"
+        self.directory_path.mkdir(parents=True, exist_ok=True)
 
         self.setup_sandbox()
 
@@ -74,7 +73,7 @@ class PythonSandbox(Sandbox):
             docker.models.containers.Container: The Docker container object.
         """
         logging.info(f"New Python Pipeline request for code: {fulltext_code}")
-        file_path = write_str_to_file(fulltext_code, self.directory_path, ".py")
+        file_path = write_str_to_file(fulltext_code, self.directory_path / "backend.py")
         running_container = execute_python(file_path)
         time.sleep(1)  # breathing time so logs can be displayed
         return running_container
@@ -111,7 +110,9 @@ class FrontendSandbox(Sandbox):
             docker.models.containers.Container: The Docker container object.
         """
         logging.info(f"New Frontend Pipeline request for code: {fulltext_html_code}")
-        file_path = write_str_to_file(fulltext_html_code, self.directory_path, ".html")
+        file_path = write_str_to_file(
+            fulltext_html_code, self.directory_path / "index.html"
+        )
         running_container = execute_frontend(file_path)
         time.sleep(1)  # breathing time so logs can be displayed
         return running_container
