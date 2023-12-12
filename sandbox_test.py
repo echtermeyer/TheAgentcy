@@ -2,9 +2,25 @@ from sandbox.instantiate import PythonSandbox, FrontendSandbox
 from sandbox.logger import Logger
 
 sandbox_backend = PythonSandbox()
+# sandbox2_backend = PythonSandbox(subfolder_path="test", container_name="test:latest")
 sandbox_frontend= FrontendSandbox()
 
 startup_logger = Logger()
+
+# backend2_string = """
+# from fastapi import FastAPI
+# import uvicorn
+
+# app = FastAPI()
+
+# @app.get("/test")
+# async def read_root():
+#     return "Backend running!"
+
+# # Start the web server
+# uvicorn.run(app, host="0.0.0.0", port=8001)
+
+# """
 
 backend_string = """
 from fastapi import FastAPI
@@ -45,17 +61,29 @@ frontend_string = """
     <h1>Hello, World!</h1>
     <p>This is my simple web page.</p>
     <button id="myButton">Click Me</button>
+    <p id="apiResponse"></p>
 
     <script>
         // Embedded JavaScript
         document.getElementById('myButton').addEventListener('click', function() {
-            alert('Button clicked!');
+            fetch('http://localhost:8000/test')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('apiResponse').textContent = data;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('apiResponse').textContent = 'Failed to get response';
+                });
         });
     </script>
 
 </body>
 </html>
 """
+
+# backend2_container = sandbox2_backend.trigger_execution_pipeline(backend2_string, dependencies=["FastAPI", "uvicorn"], port="8001")
+
 
 backend_container = sandbox_backend.trigger_execution_pipeline(backend_string)
 print(backend_container.logs(tail=10).decode('utf-8'))

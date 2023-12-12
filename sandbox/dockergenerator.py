@@ -6,6 +6,22 @@ import tempfile
 from typing import Any, Set, Tuple
 import logging
 
+def extract_port_from_string(script: str) -> str:
+    """
+    Extracts the port number from a script string.
+
+    Args:
+        script (str): The Python script as a string.
+
+    Returns:
+        str: The port number as a string, defaults to '8000' if not found.
+    """
+    for line in script.splitlines():
+        match = re.search(r'port=(\d+)', line)
+        if match:
+            return match.group(1)
+    return '8000'
+
 def extract_dependencies_from_string(script: str) -> Set[str]:
     """
     Extracts Python module dependencies from a script string.
@@ -23,74 +39,16 @@ def extract_dependencies_from_string(script: str) -> Set[str]:
             dependencies.add(match[0] or match[1])
     return dependencies
 
-def extract_port_from_string(script: str) -> str:
+def execute_code(input_data: str, 
+                 container_name: str,
+                 dockerfile_method: callable, 
+                 dependencies: Set[str],
+                 port: str) -> Any:
     """
-    Extracts the port number from a script string.
+    Executes a script in a Docker container.
 
     Args:
-        script (str): The Python script as a string.
-
-    Returns:
-        str: The port number as a string, defaults to '8000' if not found.
-    """
-    for line in script.splitlines():
-        match = re.search(r'port=(\d+)', line)
-        if match:
-            return match.group(1)
-    return '8000'
-
-def create_dockerfile_bytes_python(script_name: str, dependencies: Set[str], port: str) -> BytesIO:
-    """
-    Creates a Dockerfile as a BytesIO object.
-
-    Args:
-        script_name (str): The name of the Python script.
-        dependencies (Set[str]): A set of Python module dependencies.
-        port (str): The port number to expose.
-
-    Returns:
-        BytesIO: The Dockerfile as a BytesIO object.
-    """
-    dockerfile_str = (
-        "FROM python:3.9-slim\n"
-        "WORKDIR /app\n"
-        f"COPY . /app\n"
-        f"EXPOSE {port}\n"
-        f"RUN pip install --no-cache-dir wheel\n"
-        f"RUN pip install --no-cache-dir {' '.join(dependencies)}\n"
-        f'CMD ["python", "{script_name}"]\n'
-    )
-    return BytesIO(dockerfile_str.encode('utf-8'))
-
-def create_dockerfile_bytes_frontend(port: str) -> BytesIO:
-    """
-    Creates a Dockerfile for an Nginx server as a BytesIO object.
-
-    Args:
-        html_script_name (str): The name of the HTML script.
-        working_directory (str): The working directory where the script is located.
-        port (str): The port number to expose.
-
-    Returns:
-        BytesIO: The Dockerfile as a BytesIO object.
-    """
-    dockerfile_str = (
-        "FROM nginx:alpine\n"
-        f"COPY . .\n"
-        f"EXPOSE {port}\n"
-        f"EXPOSE 8000\n"
-        f'CMD ["nginx", "-g", "daemon off;"]\n'
-    )
-
-    return BytesIO(dockerfile_str.encode('utf-8'))
-
-
-def execute_python(input_data: str) -> Any:
-    """
-    Executes a Python script in a Docker container.
-
-    Args:
-        input_data (str): The Python script as a string or a path to the script file.
+        input_data (str): The script as a string or a path to the script file.
 
     Returns:
         Any: The Docker container object or an error message.
@@ -98,61 +56,31 @@ def execute_python(input_data: str) -> Any:
     try:
         workspace_folder, script_name, script_string = prepare_script_workspace(input_data)
         client = docker.from_env()
-        IMAGE_TAG = "python_webserver_image:latest"
 
-        dependencies = extract_dependencies_from_string(script_string)
-        port = extract_port_from_string(script_string)
-        dockerfile_bytes = create_dockerfile_bytes_python(script_name, dependencies, port)
+        if not port:
+            port = extract_port_from_string(script_string)
+        if not dependencies:
+            dependencies = extract_dependencies_from_string(script_string)
+
+
+        dockerfile_bytes = dockerfile_method(script_name, dependencies, port)
 
         logging.info(f"Parsing file: {script_name}.")
 
         # Remove existing container if exists
-        remove_existing_container_and_image(client, IMAGE_TAG)
+        remove_existing_container_and_image(client, container_name)
 
         # Build and run the Docker image
-        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port)
+        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, container_name, port)
         
         logging.info(f"Container {container.id[:6]} started successfully.")
 
         return container
 
     except Exception as e:
-        logging.error(f"Error in execute_python: {str(e)}")
+        logging.error(f"Error in execute_code: {str(e)}")
         return f"Error: {str(e)}"
 
-def execute_frontend(input_data):
-    """
-    Executes a Frontend(HTML) script in a Docker container.
-
-    Args:
-        input_data (str): The HTML script as a string or a path to the script file.
-
-    Returns:
-        Any: The Docker container object or an error message.
-    """
-    try:
-        workspace_folder, script_name, script_string = prepare_script_workspace(input_data)
-        client = docker.from_env()
-        IMAGE_TAG = "nginx_webserver_image:latest"
-
-        port = 80
-        dockerfile_bytes = create_dockerfile_bytes_frontend(port)
-
-        logging.info(f"Parsing file: {script_name}.")
-
-        # Remove existing container if exists
-        remove_existing_container_and_image(client, IMAGE_TAG)
-
-        # Build and run the Docker image
-        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, IMAGE_TAG, port)
-        
-        logging.info(f"Container {container.id[:6]} started successfully.")
-
-        return container
-
-    except Exception as e:
-        logging.error(f"Error in execute_frontend: {str(e)}")
-        return f"Error: {str(e)}"
 
 def prepare_script_workspace(input_data: str) -> Tuple[str, str, str]:
     """
@@ -226,7 +154,13 @@ def remove_existing_container_and_image(client: docker.DockerClient, image_tag: 
     except Exception as e:
         logging.error(f"Error removing Docker image or container with tag {image_tag}: {str(e)}")
 
-def build_and_run_container(client: docker.DockerClient, workspace_folder: str, dockerfile_bytes: BytesIO, image_tag: str, port: str, network_name: str = "agentcy") -> docker.models.containers.Container:
+def build_and_run_container(client: docker.DockerClient, 
+                            workspace_folder: str, 
+                            dockerfile_bytes: BytesIO, 
+                            image_tag: str, 
+                            port: str, 
+                            network_name: str = "agentcy", 
+                            container_name: str = None) -> docker.models.containers.Container:
     """
     Builds and runs a Docker container on a specified network.
 
@@ -237,6 +171,7 @@ def build_and_run_container(client: docker.DockerClient, workspace_folder: str, 
         image_tag (str): The tag for the Docker image.
         port (str): The port number to expose.
         network_name (str): The name of the Docker network to use.
+        container_name (str, optional): The name of the Docker container. Defaults to None.
 
     Returns:
         docker.models.containers.Container: The Docker container object.
@@ -262,6 +197,7 @@ def build_and_run_container(client: docker.DockerClient, workspace_folder: str, 
         volumes={os.path.abspath(workspace_folder): {'bind': '/usr/share/nginx/html/'}},
         working_dir='/usr/share/nginx/html/',
         network=network_name,
+        name=container_name,  # This line sets the container name
         stderr=True,
         stdout=True,
         detach=True,

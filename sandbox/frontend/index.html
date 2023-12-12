@@ -23,11 +23,20 @@
     <h1>Hello, World!</h1>
     <p>This is my simple web page.</p>
     <button id="myButton">Click Me</button>
+    <p id="apiResponse"></p>
 
     <script>
         // Embedded JavaScript
         document.getElementById('myButton').addEventListener('click', function() {
-            alert('Button clicked!');
+            fetch('http://localhost:8000/test')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('apiResponse').textContent = data;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('apiResponse').textContent = 'Failed to get response';
+                });
         });
     </script>
 
