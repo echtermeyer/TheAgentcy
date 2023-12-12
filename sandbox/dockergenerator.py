@@ -78,6 +78,7 @@ def create_dockerfile_bytes_frontend(port: str) -> BytesIO:
         "FROM nginx:alpine\n"
         f"COPY . .\n"
         f"EXPOSE {port}\n"
+        f"EXPOSE 8000\n"
         f'CMD ["nginx", "-g", "daemon off;"]\n'
     )
 
@@ -225,9 +226,9 @@ def remove_existing_container_and_image(client: docker.DockerClient, image_tag: 
     except Exception as e:
         logging.error(f"Error removing Docker image or container with tag {image_tag}: {str(e)}")
 
-def build_and_run_container(client: docker.DockerClient, workspace_folder: str, dockerfile_bytes: BytesIO, image_tag: str, port: str) -> docker.models.containers.Container:
+def build_and_run_container(client: docker.DockerClient, workspace_folder: str, dockerfile_bytes: BytesIO, image_tag: str, port: str, network_name: str = "agentcy") -> docker.models.containers.Container:
     """
-    Builds and runs a Docker container.
+    Builds and runs a Docker container on a specified network.
 
     Args:
         client (docker.DockerClient): The Docker client instance.
@@ -235,10 +236,17 @@ def build_and_run_container(client: docker.DockerClient, workspace_folder: str, 
         dockerfile_bytes (BytesIO): The Dockerfile as a BytesIO object.
         image_tag (str): The tag for the Docker image.
         port (str): The port number to expose.
+        network_name (str): The name of the Docker network to use.
 
     Returns:
         docker.models.containers.Container: The Docker container object.
     """
+    # Check if the network exists, if not, create it
+    networks = client.networks.list(names=[network_name])
+    if not networks:
+        client.networks.create(network_name, driver="bridge")
+
+    # Build the image
     image, build_logs = client.images.build(
         path=workspace_folder,
         fileobj=dockerfile_bytes,
@@ -247,12 +255,17 @@ def build_and_run_container(client: docker.DockerClient, workspace_folder: str, 
         quiet=False
     )
 
-    return client.containers.run(
+    # Run the container
+    container = client.containers.run(
         image.id,
         ports={f"{port}/tcp": int(port)},
         volumes={os.path.abspath(workspace_folder): {'bind': '/usr/share/nginx/html/'}},
         working_dir='/usr/share/nginx/html/',
+        network=network_name,
         stderr=True,
         stdout=True,
         detach=True,
     )
+
+    return container
+

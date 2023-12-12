@@ -12,7 +12,7 @@ import uvicorn
 
 app = FastAPI()
 
-@app.get("/")
+@app.get("/test")
 async def read_root():
     return "Backend running!"
 
