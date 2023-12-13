@@ -28,7 +28,7 @@
     <script>
         // Embedded JavaScript
         document.getElementById('myButton').addEventListener('click', function() {
-            fetch('http://172.20.0.2:8000/test')
+            fetch('http://localhost:8000/test')
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById('apiResponse').textContent = data;
