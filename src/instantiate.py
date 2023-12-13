@@ -4,7 +4,7 @@ import os
 import time
 from typing import Set, List
 from src.utils import write_str_to_file
-from sandbox.dockergenerator import execute_code
+from src.sandbox.dockergenerator import execute_code
 import docker 
 
 from abc import ABC, abstractmethod
@@ -25,9 +25,7 @@ class Sandbox(ABC):
         # Get the current file directory (src)
         current_file_dir = os.path.dirname(__file__)
 
-        # Move up one level to the parent directory, then into the 'sandbox' directory
-        project_root = os.path.dirname(current_file_dir)
-        sandbox_dir = os.path.join(project_root, 'sandbox')
+        sandbox_dir = os.path.join(current_file_dir, 'sandbox')
 
         # Append any subfolder path to the sandbox directory path
         self.directory_path = os.path.join(sandbox_dir, subfolder_path)
@@ -88,7 +86,7 @@ class PythonSandbox(Sandbox):
         )
         return BytesIO(dockerfile_str.encode('utf-8'))
 
-    def trigger_execution_pipeline(self, fulltext_code: str, dependencies: List[str] = None, port: str = None) -> docker.models.containers.Container:
+    def trigger_execution_pipeline(self, fulltext_python_code: str, dependencies: List[str] = None, port: str = None) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given Python code.
 
@@ -98,8 +96,9 @@ class PythonSandbox(Sandbox):
         Returns:
             docker.models.containers.Container: The Docker container object.
         """
-        logging.info(f"New Python Pipeline request for code: {fulltext_code}")
-        file_path = write_str_to_file(fulltext_code, self.directory_path, ".py")
+        logging.info(f"New Python Pipeline request for code: {fulltext_python_code}")
+        
+        file_path = write_str_to_file(fulltext_python_code, os.path.join(self.directory_path, 'index.py'))
         running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies, port)
         # Wait until the container is either running or has exited
         while True:
@@ -153,7 +152,7 @@ class FrontendSandbox(Sandbox):
             docker.models.containers.Container: The Docker container object.
         """
         logging.info(f"New Frontend Pipeline request for code: {fulltext_html_code}")
-        file_path = write_str_to_file(fulltext_html_code, self.directory_path, ".html")
+        file_path = write_str_to_file(fulltext_html_code, os.path.join(self.directory_path, 'index.html'))
         running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies=[], port="80")
 
         # Wait until the container is either running or has exited
