@@ -5,4 +5,6 @@ This is the code you have to check:
 These are the error logs:
 {frontend_logs}
 
-Based on this code write a report and point out any mistakes or errors you have found. Explain them and suggest how they could be corrected. Only point errors, mistakes or things that are incorrect do not talk about things that are well done. It is possible that there are no errors or bad practices in this case just output that you have not found any errors.
+Based on this code write a report and point out any mistakes or errors you have found. Explain them and suggest how they could be corrected. Only point errors, mistakes or things that are incorrect do not talk about things that are well done. It is possible that there are no errors or bad practices in this case the report is empty.
+
+{format_instructions}
