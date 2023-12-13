@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
+from langchain.schema.messages import HumanMessage, AIMessage, SystemMessage
 
 from langchain.prompts import (
     ChatPromptTemplate,
@@ -55,14 +56,37 @@ class Agent:
             memory_key="chat_history", return_messages=True
         )
 
-        return LLMChain(llm=llm, prompt=prompt, verbose=True, memory=memory)
+        return LLMChain(llm=llm, prompt=prompt, verbose=False, memory=memory)
 
-    def answer(self, message: str):
-        return self.chain.run({"message": message})
+    def inject_message(self, text: str, kind: str = "human") -> None:
+        if kind == "human":
+            message = HumanMessage(content=text)
+        elif kind == "ai":
+            message = AIMessage(content=text)
+        elif kind == "system":
+            message = SystemMessage(content=text)
+        else:
+            raise ValueError(
+                "This message type is not supported. Use one of ['human', 'ai', 'system']"
+            )
+
+        self.chain.memory.chat_memory.add_message(message)
+
+    def answer(self, message: str, verbose=False):
+        answer = self.chain.run({"message": message})
+
+        if verbose:
+            print(f"\033[34m{self.name}:\033[0m {answer}")
+
+        return answer
 
 
 class ConversationWrapper:
-    def __init__(self, agent1: Agent, agent2: Agent, max_turns: int = 3) -> None:
+    """
+    Implementation of the conversation between two agents. agent1 must be the agent that returns the final results
+    """
+
+    def __init__(self, agent1: Agent, agent2: Agent, max_turns: int = 5) -> None:
         self.agent1: Agent = agent1
         self.agent2: Agent = agent2
         self.max_turns: int = max_turns
@@ -70,5 +94,35 @@ class ConversationWrapper:
     def start(self, user_query: str):
         current_response = user_query
         for _ in range(self.max_turns):
-            current_response = self.agent1.answer(current_response)
-            current_response = self.agent2.answer(current_response)
+            agent1_response = self.agent1.answer(current_response, verbose=True)
+            if agent1_response.strip().startswith(
+                "__END__"
+            ):  # either it ends directly (like for documentation)...
+                return agent1_response
+
+            current_response = self.agent2.answer(agent1_response, verbose=True)
+            if current_response.strip().startswith(
+                "__END__"
+            ):  # ... or someone has to approve it first (like for testing)
+                return agent1_response
+
+
+class HumanConversationWrapper:
+    def __init__(self, agent1: Agent, max_turns: int = 10) -> None:
+        self.agent1: Agent = agent1
+        self.max_turns: int = max_turns
+
+    def start(self):
+        human_response = input("\033[34mWhat project can we develop for you?\033[0m ")
+        for _ in range(self.max_turns):
+            ai_response = self.agent1.answer(human_response, verbose=True)
+            if ai_response.startswith("SUMMARY"):
+                print(
+                    f"\033[34m{self.agent1.name}:\033[0m Thank you for specifying your requirements. We will start working on your project now. Stay tuned!"
+                )
+                return
+
+            human_response = input("\033[34mYour answer:\033[0m ")
+
+            if human_response.lower() == "y":
+                return

@@ -1,8 +1,7 @@
 import logging
-from sandbox.instantiate import Sandbox
-
 
 class Logger:
+
     def __init__(self) -> None:
         self.setup_logger()
 
@@ -12,7 +11,7 @@ class Logger:
         """
         # Create a stream handler (console output)
         handler = logging.StreamHandler()
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
 
         # Get the root logger and configure it
