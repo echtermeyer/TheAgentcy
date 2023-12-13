@@ -1,53 +1,62 @@
 [
-    {
-      "name": "Martina",
-      "varname": "orchestrator",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Pepko",
-      "varname": "database_dev",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Testko",
-      "varname": "database_test",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Dokko",
-      "varname": "database_doc",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Günther",
-      "varname": "backend_dev",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Testher",
-      "varname": "backend_test",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Dokher",
-      "varname": "backend_doc",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Ludwig",
-      "varname": "frontend_dev",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Testwig",
-      "varname": "frontend_test",
-      "model": "gpt-3.5-turbo"
-    },
-    {
-      "name": "Dokwig",
-      "varname": "frontend_doc",
-      "model": "gpt-3.5-turbo"
-    }
-  ]
-  
+  {
+    "name": "Organizer",
+    "varname": "orchestrator",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Database Dev",
+    "varname": "database_dev",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Database Tester",
+    "varname": "database_test",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.2
+  },
+  {
+    "name": "Database Doc",
+    "varname": "database_doc",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.5
+  },
+  {
+    "name": "Backend Dev",
+    "varname": "backend_dev",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Backend Tester",
+    "varname": "backend_test",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.2
+  },
+  {
+    "name": "Backend Doc",
+    "varname": "backend_doc",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.5
+  },
+  {
+    "name": "Frontend Dev",
+    "varname": "frontend_dev",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.1
+  },
+  {
+    "name": "Frontend Tester",
+    "varname": "frontend_test",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.2
+  },
+  {
+    "name": "Frontend Doc",
+    "varname": "frontend_doc",
+    "model": "gpt-3.5-turbo-1106",
+    "temperature": 0.5
+  }
+]

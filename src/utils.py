@@ -1,19 +1,22 @@
-import os
-import uuid
+import json
 
-def write_str_to_file(string: str, path: str, file_ending: str) -> str:
-    # Ensure the path exists, create it if it doesn't
-    if not os.path.exists(path):
-        os.makedirs(path)
+from typing import Dict
+from pathlib import Path
 
-    # Generate a unique filename
-    filename = "index" + file_ending
 
-    # Construct the full file path
-    full_path = os.path.join(path, filename)
-
-    # Write the string to the file
-    with open(full_path, 'w') as file:
+def write_str_to_file(string: str, full_path: Path) -> str:
+    with open(full_path, "w") as file:
         file.write(string)
 
     return full_path
+
+
+def extract_json_from_str(text: str) -> Dict:
+    start = text.find("{")
+    end = text.rfind("}") + 1
+    extracted = text[start:end]
+
+    if extracted:
+        return json.loads(extracted)
+    else:
+        raise ValueError("No valid JSON found")

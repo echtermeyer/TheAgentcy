@@ -2,6 +2,7 @@ import argparse
 
 from src.pipeline import Pipeline
 
+
 def run(args):
     pipeline = Pipeline()
     pipeline.start()

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Newsletter Signup</title>
+</head>
+<body>
+    <div class="container">
+        <h1 class="headline">Sign Up for Our Newsletter</h1>
+        <p class="description">Stay updated with the latest news and updates.</p>
+        <form id="signup-form">
+            <div class="input-group">
+                <label for="first-name">First Name</label>
+                <input type="text" id="first-name" required>
+            </div>
+            <div class="input-group">
+                <label for="last-name">Last Name</label>
+                <input type="text" id="last-name" required>
+            </div>
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required>
+            </div>
+            <button type="submit" id="signup-button">Sign Up</button>
+        </form>
+    </div>
+
+    <div id="success-popup" class="popup">
+        <p>You have successfully subscribed to our newsletter!</p>
+        <button id="close-popup">Close</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
