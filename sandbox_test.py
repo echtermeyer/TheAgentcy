@@ -51,7 +51,7 @@ frontend_string = """
     <script>
         // Embedded JavaScript
         document.getElementById('myButton').addEventListener('click', function() {
-            fetch('http://localhost:8000/test')
+            fetch('http://172.20.0.2:8000/test')
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById('apiResponse').textContent = data;
@@ -77,6 +77,6 @@ print("IP Adresse in Docker Netzwerk:" + ip_addr_backend)
 
 
 frontend_container = sandbox_frontend.trigger_execution_pipeline(frontend_string)
-ip_addr_frontend = backend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
+ip_addr_frontend = frontend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(frontend_container.logs(tail=10).decode('utf-8'))
 print("IP Adresse in Docker Netzwerk:" + ip_addr_frontend)
