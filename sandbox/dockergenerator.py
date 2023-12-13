@@ -40,6 +40,7 @@ def extract_dependencies_from_string(script: str) -> Set[str]:
     return dependencies
 
 def execute_code(input_data: str, 
+                 image_tag: str,
                  container_name: str,
                  dockerfile_method: callable, 
                  dependencies: Set[str],
@@ -68,12 +69,17 @@ def execute_code(input_data: str,
         logging.info(f"Parsing file: {script_name}.")
 
         # Remove existing container if exists
-        remove_existing_container_and_image(client, container_name)
+        remove_existing_container_and_image(client, container_name, image_tag)
 
         # Build and run the Docker image
-        container = build_and_run_container(client, workspace_folder, dockerfile_bytes, container_name, port)
+        container = build_and_run_container(client=client,
+                                            workspace_folder=workspace_folder,
+                                            dockerfile_bytes=dockerfile_bytes, 
+                                            container_name=container_name,
+                                            image_tag=image_tag,
+                                            port=port)
         
-        logging.info(f"Container {container.id[:6]} started successfully.")
+        logging.info(f"Container {container.name} started successfully.")
 
         return container
 
@@ -131,35 +137,44 @@ def write_file(file_path: str, content: str) -> None:
     with open(file_path, 'w') as file:
         file.write(content)
 
-def remove_existing_container_and_image(client: docker.DockerClient, image_tag: str) -> None:
+def remove_existing_container_and_image(client: docker.DockerClient, container_name: str, image_tag: str) -> None:
     """
-    Removes an existing Docker container with the specified image tag.
+    Removes an existing Docker container by its name and the associated image by its tag.
 
     Args:
         client (docker.DockerClient): The Docker client instance.
-        image_tag (str): The image tag to identify the container.
+        container_name (str): The name of the container to remove.
+        image_tag (str): The tag of the image to remove.
     """
     try:
-        containers = client.containers.list(all=True)
-        for container in containers:
-            if container.image.tags and image_tag in container.image.tags:
+        # Try to get the container by name and remove it
+        try:
+            container = client.containers.get(container_name)
+            logging.info(f"Removing container: {container_name}")
+            container.stop()
+            container.remove()
+        except docker.errors.NotFound:
+            logging.info(f"No container found with name: {container_name}")
 
-                logging.info(f"Detected previous container: {container.id[:6]} deleting and replacing it now.")
-
-                container.stop()
-                container.remove()
-                image = client.images.get(image_tag)
-                client.images.remove(image.id)
+        # Remove the image associated with the given tag
+        try:
+            image = client.images.get(image_tag)
+            logging.info(f"Removing image: {image_tag}")
+            client.images.remove(image.id)
+        except docker.errors.ImageNotFound:
+            logging.info(f"No image found with tag: {image_tag}")
+        except docker.errors.APIError as e:
+            logging.error(f"Error removing image with tag {image_tag}: {str(e)}")
 
     except Exception as e:
-        logging.error(f"Error removing Docker image or container with tag {image_tag}: {str(e)}")
+        logging.error(f"General error in removing container or image: {str(e)}")
 
 def build_and_run_container(client: docker.DockerClient, 
                             workspace_folder: str, 
                             dockerfile_bytes: BytesIO, 
                             image_tag: str, 
                             port: str, 
-                            network_name: str = "agentcy", 
+                            network_name: str = "Agentcy", 
                             container_name: str = None) -> docker.models.containers.Container:
     """
     Builds and runs a Docker container on a specified network.

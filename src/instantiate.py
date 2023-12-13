@@ -17,13 +17,20 @@ class Sandbox(ABC):
 
     def __init__(self, subfolder_path: str = "") -> None:
         """
-        Initializes the Python sandbox environment.
+        Initializes the Sandbox environment.
 
         Args:
             subfolder_path (str): The subfolder path for the sandbox environment.
         """
+        # Get the current file directory (src)
         current_file_dir = os.path.dirname(__file__)
-        self.directory_path = os.path.join(current_file_dir, subfolder_path)
+
+        # Move up one level to the parent directory, then into the 'sandbox' directory
+        project_root = os.path.dirname(current_file_dir)
+        sandbox_dir = os.path.join(project_root, 'sandbox')
+
+        # Append any subfolder path to the sandbox directory path
+        self.directory_path = os.path.join(sandbox_dir, subfolder_path)
         if not os.path.exists(self.directory_path):
             os.makedirs(self.directory_path)
 
@@ -52,7 +59,8 @@ class PythonSandbox(Sandbox):
     """
     A class for creating and managing a Python sandbox environment using Docker.
     """
-    def __init__(self, subfolder_path: str = "backend", container_name: str = "python_webserver:latest") -> None:
+    def __init__(self, subfolder_path: str = "backend", container_name: str = "backend", image_tag: str = "python_webserver:latest") -> None:
+        self.image_name = image_tag
         self.container_name = container_name
         super().__init__(subfolder_path)
     
@@ -92,16 +100,24 @@ class PythonSandbox(Sandbox):
         """
         logging.info(f"New Python Pipeline request for code: {fulltext_code}")
         file_path = write_str_to_file(fulltext_code, self.directory_path, ".py")
-        running_container = execute_code(file_path, self.container_name, self.create_dockerfile_bytes, dependencies, port)
-        time.sleep(1) # breathing time so logs can be displayed
-        return running_container
+        running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies, port)
+        # Wait until the container is either running or has exited
+        while True:
+            running_container.reload()  # Refresh the container data
+            container_status = running_container.attrs['State']['Status']
+            if container_status != 'created':
+                break
+            time.sleep(1)  # Wait for a second before checking again
+
+        return running_container    
 
 
 class FrontendSandbox(Sandbox):
     """
     A class for creating and managing a Nginx sandbox environment using Docker.
     """
-    def __init__(self, subfolder_path: str = "frontend", container_name: str = "nginx_webserver:latest") -> None:
+    def __init__(self, subfolder_path: str = "frontend", container_name: str = "frontend", image_tag: str = "nginx_webserver:latest") -> None:
+        self.image_name = image_tag
         self.container_name = container_name
         super().__init__(subfolder_path)
 
@@ -128,16 +144,24 @@ class FrontendSandbox(Sandbox):
 
     def trigger_execution_pipeline(self, fulltext_html_code: str) -> docker.models.containers.Container:
         """
-        Triggers the execution pipeline for the given Python code.
+        Triggers the execution pipeline for the given HTML code.
 
         Args:
-            fulltext_code (str): The HTML code to be executed.
+            fulltext_html_code (str): The HTML code to be executed.
 
         Returns:
             docker.models.containers.Container: The Docker container object.
         """
         logging.info(f"New Frontend Pipeline request for code: {fulltext_html_code}")
         file_path = write_str_to_file(fulltext_html_code, self.directory_path, ".html")
-        running_container = execute_code(file_path, self.container_name, self.create_dockerfile_bytes, dependencies=[], port="80")
-        time.sleep(1) # breathing time so logs can be displayed
+        running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies=[], port="80")
+
+        # Wait until the container is either running or has exited
+        while True:
+            running_container.reload()  # Refresh the container data
+            container_status = running_container.attrs['State']['Status']
+            if container_status != 'created':
+                break
+            time.sleep(1)  # Wait for a second before checking again
+
         return running_container

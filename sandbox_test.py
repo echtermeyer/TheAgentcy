@@ -1,26 +1,11 @@
-from sandbox.instantiate import PythonSandbox, FrontendSandbox
-from sandbox.logger import Logger
+from src.instantiate import PythonSandbox, FrontendSandbox
+from src.logger import Logger
 
 sandbox_backend = PythonSandbox()
-# sandbox2_backend = PythonSandbox(subfolder_path="test", container_name="test:latest")
 sandbox_frontend= FrontendSandbox()
+# test_container = PythonSandbox("test", "testy", "test:latest")
 
 startup_logger = Logger()
-
-# backend2_string = """
-# from fastapi import FastAPI
-# import uvicorn
-
-# app = FastAPI()
-
-# @app.get("/test")
-# async def read_root():
-#     return "Backend running!"
-
-# # Start the web server
-# uvicorn.run(app, host="0.0.0.0", port=8001)
-
-# """
 
 backend_string = """
 from fastapi import FastAPI
@@ -82,11 +67,16 @@ frontend_string = """
 </html>
 """
 
-# backend2_container = sandbox2_backend.trigger_execution_pipeline(backend2_string, dependencies=["FastAPI", "uvicorn"], port="8001")
+# test_container = test_container.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn"], port="8001")
 
 
-backend_container = sandbox_backend.trigger_execution_pipeline(backend_string)
+backend_container = sandbox_backend.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn"])
+ip_addr_backend = backend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(backend_container.logs(tail=10).decode('utf-8'))
+print("IP Adresse in Docker Netzwerk:" + ip_addr_backend)
+
 
 frontend_container = sandbox_frontend.trigger_execution_pipeline(frontend_string)
+ip_addr_frontend = backend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(frontend_container.logs(tail=10).decode('utf-8'))
+print("IP Adresse in Docker Netzwerk:" + ip_addr_frontend)
