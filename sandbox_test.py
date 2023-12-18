@@ -1,8 +1,10 @@
-from src.instantiate import PythonSandbox, FrontendSandbox
+from src.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 from src.logger import Logger
 
 sandbox_backend = PythonSandbox()
 sandbox_frontend= FrontendSandbox()
+sandbox_database = DatabaseSandbox()
+
 # test_container = PythonSandbox("test", "testy", "test:latest")
 
 startup_logger = Logger()
@@ -76,17 +78,22 @@ frontend_string = """
 </body>
 </html>
 """
+database_string = """CREATE xyz FROM abc WHERE 123"""
 
 # test_container = test_container.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn"], port="8001")
 
 
 backend_container = sandbox_backend.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn"])
-ip_addr_backend = backend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
+# ip_addr_backend = backend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(backend_container.logs(tail=10).decode('utf-8'))
-print("IP Adresse in Docker Netzwerk:" + ip_addr_backend)
+# print("IP Adresse in Docker Netzwerk:" + ip_addr_backend)
 
 
 frontend_container = sandbox_frontend.trigger_execution_pipeline(frontend_string)
-ip_addr_frontend = frontend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
+# ip_addr_frontend = frontend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(frontend_container.logs(tail=10).decode('utf-8'))
-print("IP Adresse in Docker Netzwerk:" + ip_addr_frontend)
+# print("IP Adresse in Docker Netzwerk:" + ip_addr_frontend)
+
+print(sandbox_database.url)
+print(sandbox_frontend.url)
+print(sandbox_backend.url)

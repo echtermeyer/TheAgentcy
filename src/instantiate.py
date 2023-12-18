@@ -51,6 +51,11 @@ class Sandbox(ABC):
     @property
     def path(self):
         return self.directory_path
+    
+    @property
+    @abstractmethod
+    def url(self):
+        pass
 
 
 class PythonSandbox(Sandbox):
@@ -62,6 +67,10 @@ class PythonSandbox(Sandbox):
         self.container_name = container_name
         super().__init__(subfolder_path)
     
+    @property
+    def url(self) -> str:
+        return f"http://localhost:{self.port}"
+
     def create_dockerfile_bytes(self, script_name: str, dependencies: Set[str], port: str) -> BytesIO:
         """
         Creates a Dockerfile as a BytesIO object.
@@ -98,27 +107,36 @@ class PythonSandbox(Sandbox):
         """
         logging.info(f"New Python Pipeline request for code: {fulltext_python_code}")
         
+        self.port = port
+
         file_path = write_str_to_file(fulltext_python_code, os.path.join(self.directory_path, 'index.py'))
         running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies, port)
         # Wait until the container is either running or has exited
-        while True:
-            running_container.reload()  # Refresh the container data
-            container_status = running_container.attrs['State']['Status']
-            if container_status != 'created':
-                break
-            time.sleep(1)  # Wait for a second before checking again
+        try:
+            while True:
+                running_container.reload()  # Refresh the container data
+                container_status = running_container.attrs['State']['Status']
+                if container_status != 'created':
+                    break
+                time.sleep(1)  # Wait for a second before checking again
+        except Exception as e:
+            print(e)
 
         return running_container    
 
 
 class FrontendSandbox(Sandbox):
-    """
+    """""
     A class for creating and managing a Nginx sandbox environment using Docker.
-    """
+    """""
     def __init__(self, subfolder_path: str = "frontend", container_name: str = "frontend", image_tag: str = "nginx_webserver:latest") -> None:
         self.image_name = image_tag
         self.container_name = container_name
         super().__init__(subfolder_path)
+
+    @property
+    def url(self) -> str:
+        return f"http://localhost:{self.port}"
 
     def create_dockerfile_bytes(self, script_name: str, dependencies: Set[str], port: str) -> BytesIO:
         """
@@ -152,9 +170,94 @@ class FrontendSandbox(Sandbox):
             docker.models.containers.Container: The Docker container object.
         """
         logging.info(f"New Frontend Pipeline request for code: {fulltext_html_code}")
-        file_path = write_str_to_file(fulltext_html_code, os.path.join(self.directory_path, 'index.html'))
-        running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies=[], port="80")
 
+        self.port = "80"
+
+        file_path = write_str_to_file(fulltext_html_code, os.path.join(self.directory_path, 'index.html'))
+        running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies=[], port=self.port)
+
+        # Wait until the container is either running or has exited
+        while True:
+            running_container.reload()  # Refresh the container data
+            container_status = running_container.attrs['State']['Status']
+            if container_status != 'created':
+                break
+            time.sleep(1)  # Wait for a second before checking again
+
+        return running_container
+
+class DatabaseSandbox(Sandbox):
+    """
+    A class for creating and managing a Postgres sandbox environment using Docker.
+
+    Args:
+        subfolder_path (str): The subfolder path for the sandbox environment.
+        container_name (str): The name of the Docker container.
+        image_tag (str): The name of the Docker image.
+        port (str): The port number to expose.
+        db_user (str): The database user.
+        db_pwd (str): The database password.
+
+    Returns:
+        str: The database connection string.
+    """
+    def __init__(self, 
+                 subfolder_path: str = "database", 
+                 container_name: str = "database", 
+                 image_tag: str = "postgres_webserver:latest", 
+                 port: str = "3306", 
+                 db_user: str = "user", 
+                 db_pwd: str = "admin") -> None:
+        self.image_name = image_tag
+        self.container_name = container_name
+        self.port = port
+        self.db_user = db_user
+        self.db_pwd = db_pwd
+        super().__init__(subfolder_path)
+
+        self.trigger_execution_pipeline()
+
+    @property
+    def url(self) -> str:
+        return f"postgresql://{self.db_user}:{self.db_pwd}@localhost:{self.port}"
+
+    def create_dockerfile_bytes(self, script_name: str, dependencies: Set[str], port: str) -> BytesIO:
+        """
+        Creates a Dockerfile for an Postgres server as a BytesIO object.
+
+        Args:
+            script_name (str): Not used yet.
+            dependencies (Set[str]): Not used yet.
+            port (str): The port number to expose.
+
+        Returns:
+            BytesIO: The Dockerfile as a BytesIO object.
+        """
+        dockerfile_str = (
+            "FROM postgres:latest\n"
+            f"ENV POSTGRES_PASSWORD={dependencies[0]}\n"
+            f"ENV POSTGRES_DB={dependencies[1]}\n"
+            f"EXPOSE {port}\n"
+            'CMD ["postgres"]\n'
+        )
+
+        return BytesIO(dockerfile_str.encode('utf-8'))
+
+    def trigger_execution_pipeline(self) -> docker.models.containers.Container:
+        """
+        Triggers the execution pipeline for the given SQL code.
+
+        Args:
+
+        Returns:
+            docker.models.containers.Container: The Docker container DB.
+        """
+        logging.info(f"New Database Creation")
+        try:
+            file_path = write_str_to_file("This is only the instantiation file, there is no code parsed yet.", os.path.join(self.directory_path, 'INFO.md'))
+            running_container = execute_code(file_path, self.image_name, self.container_name, self.create_dockerfile_bytes, dependencies=[self.db_user, self.db_pwd], port=self.port)
+        except Exception as e:
+            return f"error when creating database, Error: {str(e)} or also {running_container}"
         # Wait until the container is either running or has exited
         while True:
             running_container.reload()  # Refresh the container data
