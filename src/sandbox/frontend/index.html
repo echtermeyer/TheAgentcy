@@ -16,28 +16,97 @@
         p {
             color: green;
         }
+        #itemsList {
+            margin-top: 20px;
+        }
+        .item {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
     <h1>Hello, World!</h1>
     <p>This is my simple web page.</p>
-    <button id="myButton">Click Me</button>
+
+    <!-- Form to Add New Item -->
+    <input type="text" id="itemName" placeholder="Enter item name">
+    <button id="addItemButton">Add Item</button>
+
+    <!-- Button to Get Items -->
+    <button id="getItemsButton">Get Items</button>
+
+    <!-- Display API Response -->
     <p id="apiResponse"></p>
+
+    <!-- List to display items -->
+    <ul id="itemsList"></ul>
 
     <script>
         // Embedded JavaScript
-        document.getElementById('myButton').addEventListener('click', function() {
-            fetch('http://localhost:8000/test')
-                .then(response => response.text())
+        document.getElementById('addItemButton').addEventListener('click', function() {
+            var itemName = document.getElementById('itemName').value;
+            fetch('http://localhost:8000/add_item/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({name: itemName})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('apiResponse').textContent = 'Item added with ID: ' + data.id;
+                document.getElementById('itemName').value = ''; // Clear input field
+                getItems(); // Refresh the items list
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('apiResponse').textContent = 'Failed to add item';
+            });
+        });
+
+        function deleteItem(itemId) {
+            fetch('http://localhost:8000/delete_item/' + itemId, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('apiResponse').textContent = 'Item deleted';
+                getItems(); // Refresh the items list
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('apiResponse').textContent = 'Failed to delete item';
+            });
+        }
+
+        function getItems() {
+            fetch('http://localhost:8000/get_items/')
+                .then(response => response.json())
                 .then(data => {
-                    document.getElementById('apiResponse').textContent = data;
+                    var itemsList = document.getElementById('itemsList');
+                    itemsList.innerHTML = ''; // Clear current list
+                    data.items.forEach(function(item) {
+                        var li = document.createElement('li');
+                        li.classList.add('item');
+                        li.textContent = item.name + ' ';
+
+                        // Add a delete button for each item
+                        var deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.onclick = function() { deleteItem(item.id); };
+                        li.appendChild(deleteButton);
+
+                        itemsList.appendChild(li);
+                    });
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('apiResponse').textContent = 'Failed to get response';
+                    document.getElementById('apiResponse').textContent = 'Failed to get items';
                 });
-        });
+        }
+
+        document.getElementById('getItemsButton').addEventListener('click', getItems);
     </script>
 
 </body>
