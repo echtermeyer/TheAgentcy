@@ -95,7 +95,7 @@ class PythonSandbox(Sandbox):
         )
         return BytesIO(dockerfile_str.encode('utf-8'))
 
-    def trigger_execution_pipeline(self, fulltext_python_code: str, dependencies: List[str] = None, port: str = None) -> docker.models.containers.Container:
+    def trigger_execution_pipeline(self, fulltext_python_code: str, dependencies: List[str] = None, port: str = "8000") -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given Python code.
 
@@ -123,7 +123,6 @@ class PythonSandbox(Sandbox):
             print(e)
 
         return running_container    
-
 
 class FrontendSandbox(Sandbox):
     """""
@@ -205,7 +204,7 @@ class DatabaseSandbox(Sandbox):
                  subfolder_path: str = "database", 
                  container_name: str = "database", 
                  image_tag: str = "postgres_webserver:latest", 
-                 port: str = "3306", 
+                 port: str = "5432", 
                  db_user: str = "user", 
                  db_pwd: str = "admin") -> None:
         self.image_name = image_tag
@@ -235,8 +234,8 @@ class DatabaseSandbox(Sandbox):
         """
         dockerfile_str = (
             "FROM postgres:latest\n"
-            f"ENV POSTGRES_PASSWORD={dependencies[0]}\n"
-            f"ENV POSTGRES_DB={dependencies[1]}\n"
+            f"ENV POSTGRES_USER={dependencies[0]}\n"
+            f"ENV POSTGRES_PASSWORD={dependencies[1]}\n"
             f"EXPOSE {port}\n"
             'CMD ["postgres"]\n'
         )
