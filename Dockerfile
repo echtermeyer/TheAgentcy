@@ -1,10 +1,21 @@
-FROM python:3.11-slim
-RUN mkdir /app 
+# Use the specified base image
+FROM docker/dev-environments-default:stable-1
+
+# Install software-properties-common, pip, and other dependencies
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    # Install Poetry
+    pip3 install poetry && \
+    # Configure Poetry: Do not create virtualenvs inside the project
+    poetry config virtualenvs.create true
+
+# Copy the project files into the container
 COPY . /app
-COPY pyproject.toml /app 
 WORKDIR /app
-ENV PYTHONPATH=${PYTHONPATH}:${PWD} 
-RUN pip3 install poetry
-RUN poetry config virtualenvs.create false
+
+# Install dependencies using Poetry
 RUN poetry install --no-dev
-CMD ["poetry", "run", "python", "sandbox_test.py"]
+CMD ["poetry", "shell"]
