@@ -3,60 +3,111 @@
     "name": "Organizer",
     "varname": "orchestrator",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.1
+    "temperature": 0.1,
+    "parser": {
+      "type": "none",
+      "use_parser": false,
+      "fields": []
+    }
   },
   {
     "name": "Database Dev",
     "varname": "database_dev",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.1
+    "temperature": 0.1,
+    "parser": {
+      "type": "code",
+      "use_parser": true,
+      "fields": ["sql"]
+    }
   },
   {
     "name": "Database Tester",
     "varname": "database_test",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.2
+    "temperature": 0.2,
+    "parser": {
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
+    }
   },
   {
     "name": "Database Doc",
     "varname": "database_doc",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.5
+    "temperature": 0.5,
+    "parser": {
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
+    }
   },
   {
     "name": "Backend Dev",
     "varname": "backend_dev",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.1
+    "temperature": 0.1,
+    "parser": {
+      "type": "code",
+      "use_parser": true,
+      "fields": ["python"]
+    }
   },
   {
     "name": "Backend Tester",
     "varname": "backend_test",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.2
+    "temperature": 0.2,
+    "parser": {
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
+    }
   },
   {
     "name": "Backend Doc",
     "varname": "backend_doc",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.5
+    "temperature": 0.5,
+    "parser": {
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
+    }
   },
   {
     "name": "Frontend Dev",
     "varname": "frontend_dev",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.1
+    "temperature": 0.1,
+    "parser": {
+      "type": "code",
+      "use_parser": true,
+      "fields": ["html", "css", "javascript"]
+    }
+    
   },
   {
     "name": "Frontend Tester",
     "varname": "frontend_test",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.2
+    "temperature": 0.2,
+    "parser": {
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
+    }
   },
   {
     "name": "Frontend Doc",
     "varname": "frontend_doc",
     "model": "gpt-3.5-turbo-1106",
-    "temperature": 0.5
+    "temperature": 0.5,
+    "parser": {
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
+    }
   }
 ]

@@ -7,8 +7,12 @@ the layers has to be implemented using FastAPIs. In the database layer should be
 enable database access. As part of your description define how and on which port the API endpoints are called 
 and which arguments have to be parsed. Be as descriptive as possible.
 
-{
-    "database": <detailed_requirements_for_database>,
-    "backend": <detailed_requirements_for_backend>,
-    "frontend": <detailed_requirements_for_frontend>
-}
+
+The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
+```json
+    {
+        "database": <detailed_requirements_for_database>,
+        "backend": <detailed_requirements_for_backend>,
+        "frontend": <detailed_requirements_for_frontend>
+    }
+```

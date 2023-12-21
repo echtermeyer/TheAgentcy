@@ -16,17 +16,20 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 
+from src.utils import *
+
 load_dotenv()
 openai.organization = os.getenv("OPENAI_ORG")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class Agent:
-    def __init__(self, name: str, model: str, temperature: float, prompt: Path) -> None:
+    def __init__(self, name: str, model: str, temperature: float, parser:dict, prompt: Path) -> None:
         self.__name: str = name
 
         self.character: str = self.__load_agent_prompt(prompt)
         self.chain: LLMChain = self.__setup_chain(model, temperature)
+        self.parser: dict = parser
 
     @property
     def name(self):
@@ -95,16 +98,26 @@ class ConversationWrapper:
         current_response = user_query
         for _ in range(self.max_turns):
             agent1_response = self.agent1.answer(current_response, verbose=True)
-            if agent1_response.strip().startswith(
-                "__END__"
-            ):  # either it ends directly (like for documentation)...
+            agent1_response = parse_response(agent1_response, self.agent1.parser)
+            if type(agent1_response) == dict and agent1_response["accepted"]==True:
                 return agent1_response
+            elif type(agent1_response) == dict and agent1_response["accepted"]==False:
+                agent1_response = agent1_response["text"]
+            # if agent1_response.strip().startswith(
+            #     "__END__"
+            # ):  # either it ends directly (like for documentation)...
+            #     return agent1_response
 
             current_response = self.agent2.answer(agent1_response, verbose=True)
-            if current_response.strip().startswith(
-                "__END__"
-            ):  # ... or someone has to approve it first (like for testing)
+            current_response = parse_response(current_response, self.agent2.parser)
+            if type(current_response) == dict and current_response["accepted"]==True:
                 return agent1_response
+            elif type(current_response) == dict and current_response["accepted"]==False:
+                current_response = current_response["text"]
+            # if current_response.strip().startswith(
+            #     "__END__"
+            # ):  # ... or someone has to approve it first (like for testing)
+            #     return agent1_response
 
 
 class HumanConversationWrapper:
