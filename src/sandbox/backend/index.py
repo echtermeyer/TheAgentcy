@@ -74,6 +74,7 @@ async def delete_item(item_id: int):
 
 @app.get("/test")
 async def read_root():
+    await delete_item(1)
     return {"message": "Backend running!"}
 
 # Start the web server

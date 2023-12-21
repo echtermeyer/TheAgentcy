@@ -1,4 +1,5 @@
 from io import BytesIO
+import tarfile
 import docker
 import os
 import re
@@ -169,6 +170,36 @@ def remove_existing_container_and_image(client: docker.DockerClient, container_n
     except Exception as e:
         logging.error(f"General error in removing container or image: {str(e)}")
 
+def create_tar_archive(source_path):
+    """
+    Creates a tar archive of the given source path.
+
+    Args:
+        source_path (str): The path to create a tar archive of.
+
+    Returns:
+        BytesIO: The tar archive as a BytesIO object.
+    """
+    pw_tarstream = BytesIO()
+    with tarfile.open(fileobj=pw_tarstream, mode='w') as tar:
+        # Add files in the directory to the tarfile
+        for filename in os.listdir(source_path):
+            filepath = os.path.join(source_path, filename)
+            tar.add(filepath, arcname=filename)
+    pw_tarstream.seek(0)
+    return pw_tarstream
+
+def copy_files_to_container(container, tar_stream, destination_path):
+    """
+    Copies files from a tar archive to a container.
+
+    Args:
+        container (docker.models.containers.Container): The container to copy files to.
+        tar_stream (BytesIO): The tar archive stream.
+        destination_path (str): The path in the container to extract files to.
+    """
+    container.put_archive(destination_path, tar_stream)
+
 def build_and_run_container(client: docker.DockerClient, 
                             workspace_folder: str, 
                             dockerfile_bytes: BytesIO, 
@@ -177,7 +208,7 @@ def build_and_run_container(client: docker.DockerClient,
                             network_name: str = "Agentcy", 
                             container_name: str = None) -> docker.models.containers.Container:
     """
-    Builds and runs a Docker container on a specified network.
+    Builds and runs a Docker container on a specified network, copies files from the workspace folder, and restarts the container.
 
     Args:
         client (docker.DockerClient): The Docker client instance.
@@ -209,13 +240,20 @@ def build_and_run_container(client: docker.DockerClient,
     container = client.containers.run(
         image.id,
         ports={f"{port}/tcp": int(port)},
-        volumes={os.path.abspath(workspace_folder): {'bind': '/usr/share/nginx/html/'}},
-        working_dir='/usr/share/nginx/html/',
         network=network_name,
-        name=container_name,  # This line sets the container name
+        name=container_name,
         stderr=True,
         stdout=True,
         detach=True,
     )
+
+    # Create a tar archive of the specific folder
+    tar_stream = create_tar_archive(workspace_folder)
+    
+    # Copy files to the container
+    copy_files_to_container(container, tar_stream, '/usr/share/nginx/html/')
+
+    # Restart the container
+    container.restart()
 
     return container
