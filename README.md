@@ -16,6 +16,8 @@ https://github.com/OpenBMB/ChatDev
     OPENAI_ORG=
     OPENAI_API_KEY=
     ```
+7. Build docker image via ``docker build . -t <IMAGE_TAG>``
+8. Run Docker container via ``docker run -v /var/run/docker.sock:/var/run/docker.sock <IMAGE_NAME>``
 
 ### Project Members:
 - Benedikt 

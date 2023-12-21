@@ -1,3 +1,4 @@
+import time
 from src.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 from src.logger import Logger
 
@@ -86,6 +87,7 @@ async def delete_item(item_id: int):
 
 @app.get("/test")
 async def read_root():
+    await delete_item(1)
     return {"message": "Backend running!"}
 
 # Start the web server
@@ -216,15 +218,11 @@ frontend_string = """
 
 
 backend_container = sandbox_backend.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn", "asyncpg", "pydantic"])
-# ip_addr_backend = backend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(backend_container.logs(tail=10).decode('utf-8'))
-# print("IP Adresse in Docker Netzwerk:" + ip_addr_backend)
 
 
 frontend_container = sandbox_frontend.trigger_execution_pipeline(frontend_string)
-# ip_addr_frontend = frontend_container.attrs['NetworkSettings']['Networks']['Agentcy']['IPAddress']
 print(frontend_container.logs(tail=10).decode('utf-8'))
-# print("IP Adresse in Docker Netzwerk:" + ip_addr_frontend)
 
 print(sandbox_database.url)
 print(sandbox_frontend.url)

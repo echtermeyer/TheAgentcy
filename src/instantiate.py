@@ -86,8 +86,9 @@ class PythonSandbox(Sandbox):
 
         dockerfile_str = (
             "FROM python:3.9-slim\n"
-            "WORKDIR /app\n"
-            f"COPY . /app\n"
+            "RUN mkdir -p /usr/share/nginx/html/\n"
+            "WORKDIR /usr/share/nginx/html/\n"
+            f"COPY . .\n"
             f"EXPOSE {port}\n"
             f"RUN pip install --no-cache-dir wheel\n"
             f"RUN pip install --no-cache-dir {' '.join(dependencies)}\n"
@@ -151,6 +152,7 @@ class FrontendSandbox(Sandbox):
         """
         dockerfile_str = (
             "FROM nginx:alpine\n"
+            "RUN mkdir -p /usr/share/nginx/html/\n"
             f"COPY . .\n"
             f"EXPOSE {port}\n"
             f'CMD ["nginx", "-g", "daemon off;"]\n'
@@ -218,7 +220,7 @@ class DatabaseSandbox(Sandbox):
 
     @property
     def url(self) -> str:
-        return f"postgresql://{self.db_user}:{self.db_pwd}@localhost:{self.port}"
+        return f"postgresql://{self.db_user}:{self.db_pwd}@{self.container_name}:{self.port}"
 
     def create_dockerfile_bytes(self, script_name: str, dependencies: Set[str], port: str) -> BytesIO:
         """
@@ -234,6 +236,7 @@ class DatabaseSandbox(Sandbox):
         """
         dockerfile_str = (
             "FROM postgres:latest\n"
+            "RUN mkdir -p /usr/share/nginx/html/\n"
             f"ENV POSTGRES_USER={dependencies[0]}\n"
             f"ENV POSTGRES_PASSWORD={dependencies[1]}\n"
             f"EXPOSE {port}\n"

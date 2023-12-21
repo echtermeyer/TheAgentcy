@@ -1,7 +1,5 @@
 FROM python:3.11-slim
-RUN mkdir /app 
 COPY . /app
-COPY pyproject.toml /app 
 WORKDIR /app
 ENV PYTHONPATH=${PYTHONPATH}:${PWD} 
 RUN pip3 install poetry
