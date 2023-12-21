@@ -6,8 +6,7 @@
     "temperature": 0.1,
     "parser": {
       "type": "none",
-      "0": false,
-      "1": false,
+      "use_parser": false,
       "fields": []
     }
   },
@@ -18,8 +17,7 @@
     "temperature": 0.1,
     "parser": {
       "type": "code",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": ["sql"]
     }
   },
@@ -30,8 +28,7 @@
     "temperature": 0.2,
     "parser": {
       "type": "json",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": "[('accepted', bool), ('text', str)]"
     }
   },
@@ -42,8 +39,7 @@
     "temperature": 0.5,
     "parser": {
       "type": "json",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": "[('accepted', bool), ('text', str)]"
     }
   },
@@ -54,8 +50,7 @@
     "temperature": 0.1,
     "parser": {
       "type": "code",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": ["python"]
     }
   },
@@ -66,8 +61,7 @@
     "temperature": 0.2,
     "parser": {
       "type": "json",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": "[('accepted', bool), ('text', str)]"
     }
   },
@@ -78,8 +72,7 @@
     "temperature": 0.5,
     "parser": {
       "type": "json",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": "[('accepted', bool), ('text', str)]"
     }
   },
@@ -90,8 +83,7 @@
     "temperature": 0.1,
     "parser": {
       "type": "code",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": ["html", "css", "javascript"]
     }
     
@@ -103,8 +95,7 @@
     "temperature": 0.2,
     "parser": {
       "type": "json",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": "[('accepted', bool), ('text', str)]"
     }
   },
@@ -115,8 +106,7 @@
     "temperature": 0.5,
     "parser": {
       "type": "json",
-      "0": true,
-      "1": true,
+      "use_parser": true,
       "fields": "[('accepted', bool), ('text', str)]"
     }
   }

@@ -86,8 +86,8 @@ def extract_json(input_str: str, fields: List[Tuple[str, Any]]) -> dict:
         raise ValueError(f"Invalid JSON data: {e}")
 
 
-def parse_response(response:str, pos: int, parser: dict):
-    if parser[str(pos)] == False:
+def parse_response(response:str, parser: dict):
+    if parser["use_parser"] == False:
          return response
     if parser["type"] == "code":
         for language in parser["fields"]:

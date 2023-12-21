@@ -98,7 +98,7 @@ class ConversationWrapper:
         current_response = user_query
         for _ in range(self.max_turns):
             agent1_response = self.agent1.answer(current_response, verbose=True)
-            agent1_response = parse_response(agent1_response, 0, self.agent1.parser)
+            agent1_response = parse_response(agent1_response, self.agent1.parser)
             if type(agent1_response) == dict and agent1_response["accepted"]==True:
                 return agent1_response
             elif type(agent1_response) == dict and agent1_response["accepted"]==False:
@@ -109,7 +109,7 @@ class ConversationWrapper:
             #     return agent1_response
 
             current_response = self.agent2.answer(agent1_response, verbose=True)
-            current_response = parse_response(current_response, 1, self.agent2.parser)
+            current_response = parse_response(current_response, self.agent2.parser)
             if type(current_response) == dict and current_response["accepted"]==True:
                 return agent1_response
             elif type(current_response) == dict and current_response["accepted"]==False:
