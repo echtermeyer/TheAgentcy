@@ -5,7 +5,7 @@ The output should be a markdown code snippet formatted in the following schema, 
 ```json
 {{
 	"accepted": bool  // Write true if satisfied with a response and false if you have more questions.
-	"text": string (do not make it mulitline, follow json syntax) // Provide the documentation for the code or write the questions you still have.
+	"text": string (do not make it mulitline, follow json syntax) // Provide your final documentation for the code or write the questions you still have.
 }}
 ```
 

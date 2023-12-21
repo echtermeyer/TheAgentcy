@@ -60,7 +60,7 @@ class Pipeline:
         database layer of the application. The project you are working on is about: {tasks['database']}.
         """
         documentation_database = conv3.start(starter)
-        self.orchestrator.inject_message(documentation_database, kind="human")
+        # self.orchestrator.inject_message(documentation_database, kind="human")
 
         # Start backend development
         conv4 = ConversationWrapper(self.backend_dev, self.backend_test)
@@ -74,7 +74,7 @@ class Pipeline:
         backend layer of the application. The project you are working on is about: {tasks['backend']}.
         """
         documentation_backend = conv5.start(starter)
-        self.orchestrator.inject_message(documentation_backend, kind="human") 
+        # self.orchestrator.inject_message(documentation_backend, kind="human") 
         # Start backend development
         conv6 = ConversationWrapper(self.frontend_dev, self.frontend_test)
         code_frontend_str = conv6.start("These are the requirements: "+tasks["database"]+output_format('html',True)+"Do this aswell for the 'css' and 'javascript' code.")  # do something with the code
@@ -91,4 +91,4 @@ class Pipeline:
         """
 
         documentation_frontend = conv7.start(starter)
-        self.orchestrator.inject_message(documentation_frontend, kind="human")
+        # self.orchestrator.inject_message(documentation_frontend, kind="human")
