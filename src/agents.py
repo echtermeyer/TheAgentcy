@@ -24,7 +24,9 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 class Agent:
-    def __init__(self, name: str, model: str, temperature: float, parser:dict, prompt: Path) -> None:
+    def __init__(
+        self, name: str, model: str, temperature: float, parser: dict, prompt: Path
+    ) -> None:
         self.__name: str = name
 
         self.character: str = self.__load_agent_prompt(prompt)
@@ -99,9 +101,9 @@ class ConversationWrapper:
         for _ in range(self.max_turns):
             agent1_response = self.agent1.answer(current_response, verbose=True)
             agent1_response = parse_response(agent1_response, self.agent1.parser)
-            if type(agent1_response) == dict and agent1_response["accepted"]==True:
+            if type(agent1_response) == dict and agent1_response["accepted"] == True:
                 return agent1_response
-            elif type(agent1_response) == dict and agent1_response["accepted"]==False:
+            elif type(agent1_response) == dict and agent1_response["accepted"] == False:
                 agent1_response = agent1_response["text"]
             # if agent1_response.strip().startswith(
             #     "__END__"
@@ -110,9 +112,11 @@ class ConversationWrapper:
 
             current_response = self.agent2.answer(agent1_response, verbose=True)
             current_response = parse_response(current_response, self.agent2.parser)
-            if type(current_response) == dict and current_response["accepted"]==True:
+            if type(current_response) == dict and current_response["accepted"] == True:
                 return agent1_response
-            elif type(current_response) == dict and current_response["accepted"]==False:
+            elif (
+                type(current_response) == dict and current_response["accepted"] == False
+            ):
                 current_response = current_response["text"]
             # if current_response.strip().startswith(
             #     "__END__"

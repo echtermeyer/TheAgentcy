@@ -6,6 +6,7 @@ import re
 from pydantic import BaseModel, ValidationError
 from typing import Any, Tuple, List, Dict
 
+
 def write_str_to_file(string: str, full_path: Path) -> str:
     with open(full_path, "w") as file:
         file.write(string)
@@ -28,7 +29,7 @@ def extract_code(input_string, language):
     """
     Extracts a code section from the input string that starts with ```<language>
     and ends with ```.
-    
+
     :param input_string: The string to be parsed.
     :param language: The language specifier (e.g., 'json', 'python').
     :return: Extracted code section or an empty string if not found.
@@ -40,7 +41,7 @@ def extract_code(input_string, language):
         return match.group(1).strip()
     else:
         return ""
-    
+
 
 def output_format(language: str, code_only: bool) -> str:
     """
@@ -52,8 +53,8 @@ def output_format(language: str, code_only: bool) -> str:
     """
     instructions = f'The output should be a markdown code snippet, starting with "```{language}" and ending with "```".'
     if code_only:
-        force_code = 'Only output this markdown code snippet. Do not output any additional comments.'
-        return instructions+' '+force_code
+        force_code = "Only output this markdown code snippet. Do not output any additional comments."
+        return instructions + " " + force_code
 
     return instructions
 
@@ -64,15 +65,17 @@ def create_model(name: str, fields: List[Tuple[str, Any]]) -> type:
     for field_name, field_type in fields:
         annotations[field_name] = field_type
         defaults[field_name] = ...
-    return type(name, (BaseModel,), {'__annotations__': annotations, '__default__': defaults})
+    return type(
+        name, (BaseModel,), {"__annotations__": annotations, "__default__": defaults}
+    )
 
 
 def extract_json(input_str: str, fields: List[Tuple[str, Any]]) -> dict:
     # Create a dynamic model
-    DynamicModel = create_model('DynamicModel', fields)
+    DynamicModel = create_model("DynamicModel", fields)
 
     # Extract JSON string from the input
-    json_str_match = re.search(r'```json\s*(.*?)```', input_str, re.DOTALL)
+    json_str_match = re.search(r"```json\s*(.*?)```", input_str, re.DOTALL)
     if not json_str_match:
         raise ValueError("No JSON string found in the input")
 
@@ -86,19 +89,19 @@ def extract_json(input_str: str, fields: List[Tuple[str, Any]]) -> dict:
         raise ValueError(f"Invalid JSON data: {e}")
 
 
-def parse_response(response:str, parser: dict):
+def parse_response(response: str, parser: dict):
     if parser["use_parser"] == False:
-         return response
+        return response
     if parser["type"] == "code":
         for language in parser["fields"]:
-            response = language+":\n"+extract_code(response, language)
+            response = language + ":\n" + extract_code(response, language)
             # print("code parsed")
     elif parser["type"] == "json":
-            response = extract_json(response, eval(parser["fields"]))
-            # print("JSON parsed")
+        response = extract_json(response, eval(parser["fields"]))
+        # print("JSON parsed")
     else:
-         raise("Invalid type in parser. Use code or json")
-    return response # either the Code string or json
+        raise ("Invalid type in parser. Use code or json")
+    return response  # either the Code string or json
 
 
 # test_input ="""```json

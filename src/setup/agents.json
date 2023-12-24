@@ -86,7 +86,6 @@
       "use_parser": true,
       "fields": ["html", "css", "javascript"]
     }
-    
   },
   {
     "name": "Frontend Tester",

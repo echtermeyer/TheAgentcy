@@ -44,13 +44,19 @@ class Pipeline:
 
         tasks = self.orchestrator.answer(prompt)
         # print("PLAIN TASKS: "+ tasks)
-        tasks = extract_json(tasks, [("database",str),("backend", str),("frontend",str)])
-        
+        tasks = extract_json(
+            tasks, [("database", str), ("backend", str), ("frontend", str)]
+        )
 
         # Start database development
         conv2 = ConversationWrapper(self.database_dev, self.database_test)
-        code_database_str = conv2.start("These are the requirements: "+tasks["database"]+' '+output_format('sql', True))  
-        
+        code_database_str = conv2.start(
+            "These are the requirements: "
+            + tasks["database"]
+            + " "
+            + output_format("sql", True)
+        )
+
         # code_database = extract_code(code_database_str, 'sql') # do something with the code. code is now extraced in agents.py. however not complely plain there becaus langague is in string
 
         # Documentation for database
@@ -64,7 +70,12 @@ class Pipeline:
 
         # Start backend development
         conv4 = ConversationWrapper(self.backend_dev, self.backend_test)
-        code_backend_str = conv4.start("These are the requirements: "+tasks["backend"]+' '+output_format('python', True))  
+        code_backend_str = conv4.start(
+            "These are the requirements: "
+            + tasks["backend"]
+            + " "
+            + output_format("python", True)
+        )
         # code_backend = extract_code(code_backend_str, 'python') # do something with the code
 
         # Documentation for backend
@@ -74,13 +85,18 @@ class Pipeline:
         backend layer of the application. The project you are working on is about: {tasks['backend']}.
         """
         documentation_backend = conv5.start(starter)
-        self.orchestrator.inject_message(str(documentation_backend), kind="human") 
+        self.orchestrator.inject_message(str(documentation_backend), kind="human")
         # Start backend development
         conv6 = ConversationWrapper(self.frontend_dev, self.frontend_test)
-        code_frontend_str = conv6.start("These are the requirements: "+tasks["database"]+output_format('html',True)+"Do this aswell for the 'css' and 'javascript' code.")  # do something with the code
+        code_frontend_str = conv6.start(
+            "These are the requirements: "
+            + tasks["database"]
+            + output_format("html", True)
+            + "Do this aswell for the 'css' and 'javascript' code."
+        )  # do something with the code
         # code_frontend_html = extract_code(code_frontend_str, 'html')
         # code_frontend_css = extract_code(code_frontend_str, 'css')
-        # code_frontend_js = extract_code(code_frontend_str, 'javascript') 
+        # code_frontend_js = extract_code(code_frontend_str, 'javascript')
         # code extraction now in agents.py. however there code is written into one long string for conversation with comment about language
 
         # Documentation for backend

@@ -5,7 +5,7 @@ from src.logger import Logger
 
 sandbox_database = DatabaseSandbox()
 sandbox_backend = PythonSandbox()
-sandbox_frontend= FrontendSandbox()
+sandbox_frontend = FrontendSandbox()
 
 # test_container = PythonSandbox("test", "testy", "test:latest")
 
@@ -94,7 +94,6 @@ async def read_root():
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 """
-
 
 
 frontend_string = """
@@ -213,16 +212,17 @@ frontend_string = """
 """
 
 
-
 # test_container = test_container.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn"], port="8001")
 
 
-backend_container = sandbox_backend.trigger_execution_pipeline(backend_string, dependencies=["FastAPI", "uvicorn", "asyncpg", "pydantic"])
-print(backend_container.logs(tail=10).decode('utf-8'))
+backend_container = sandbox_backend.trigger_execution_pipeline(
+    backend_string, dependencies=["FastAPI", "uvicorn", "asyncpg", "pydantic"]
+)
+print(backend_container.logs(tail=10).decode("utf-8"))
 
 
 frontend_container = sandbox_frontend.trigger_execution_pipeline(frontend_string)
-print(frontend_container.logs(tail=10).decode('utf-8'))
+print(frontend_container.logs(tail=10).decode("utf-8"))
 
 print(sandbox_database.url)
 print(sandbox_frontend.url)
