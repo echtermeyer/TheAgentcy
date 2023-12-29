@@ -5,9 +5,9 @@
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.1,
     "parser": {
-      "type": "none",
-      "use_parser": false,
-      "fields": []
+      "type": "json",
+      "use_parser": true,
+      "fields": "[('accepted', bool), ('text', str)]"
     }
   },
   {
