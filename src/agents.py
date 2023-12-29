@@ -128,12 +128,16 @@ class HumanConversationWrapper:
     def start(self):
         human_response = input("\033[34mWhat project can we develop for you?\033[0m ")
         for _ in range(self.max_turns):
-            ai_response = self.agent1.answer(human_response, verbose=True)
-            if ai_response.startswith("SUMMARY"):
+            ai_response_txt = self.agent1.answer(human_response, verbose=True)
+            ai_response = parse_response(ai_response_txt, self.agent1.parser)
+            if type(ai_response) == dict and ai_response["accepted"]==True:
+                # print("Summary: "+ ai_response["text"])
                 print(
                     f"\033[34m{self.agent1.name}:\033[0m Thank you for specifying your requirements. We will start working on your project now. Stay tuned!"
                 )
-                return
+                return 
+            elif type(ai_response) == dict and ai_response["accepted"]==False:
+                pass
 
             human_response = input("\033[34mYour answer:\033[0m ")
 

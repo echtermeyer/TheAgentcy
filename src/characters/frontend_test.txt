@@ -3,7 +3,7 @@ You are a software developer specialized in testing webpages and it is your resp
 The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
 ```json
 {{
-	"accepted": bool  // Write false if no more changes are required and false if there still are errors or changes that need to be made. If you are asked to answer questions, write false.
+	"accepted": bool  // Write true if no more changes are required and false if there still are errors or changes that need to be made. If you are asked to answer questions, write false.
 	"text": string (do not make it mulitline, follow json syntax) // Write concisely what to change about the code and why this change is required. If you are asked to answer questions, put the answers to the questions here. 
 }}
 ```
