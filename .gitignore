@@ -1,6 +1,10 @@
 .vscode/
 .env
 
+# Stuff that I need to replace poetry
+.my_venv/
+requirements.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
