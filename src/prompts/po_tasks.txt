@@ -7,7 +7,7 @@ enable database access. As part of your description define how and on which port
 and which arguments have to be parsed. Be as descriptive as possible.
 
 
-It is of the utmost importance that your answer is a markdown code snippets formatted in the following schema, including the leading and trailing "```json" and "```":
+It is of the utmost importance that your answer is a markdown code snippet formatted according to the following schema, including the leading and trailing "```json" and "```":
 ```json
     {
         "database": "<detailed_requirements_for_database>",
@@ -16,4 +16,4 @@ It is of the utmost importance that your answer is a markdown code snippets form
     }
 ```
 
-It is important that you stick to this schema. There can only be 3 key value pairs and the values need to be strings as described above.
+It is very important that you stick to this schema. There can only be 3 key value pairs and the values need to be strings as described above.
