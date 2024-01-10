@@ -90,18 +90,19 @@ class Pipeline(QObject):
                 else:
                     self.__transmit_to_gui(sender=sender, message=message)
 
-        # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
-        # TODO: Falsche Datei wird gelesen
-        with open(self.root / "src/prompts/po_tasks.txt", "r") as f:
-            prompt = f.read()
-
-        # if user interacton is skipped, use a random predefined use case
+        # If user interacton is skipped, use a random predefined use case.
+        # The predefined use case is added to the memory of the orchestrator.
         if self.fast_forward:
             with open(self.root / "src/setup/summaries.json") as f:
                 summaries = json.load(f)
                 summary = random.choice(list(summaries.values()))
-                self.__transmit_to_gui(sender="You", message=summary)
-                prompt = f"Forget everything I've said before and focus on the following. {summary} TASK: {prompt}"
+
+                self.orchestrator.inject_message(summary, kind="ai")
+                self.__transmit_to_gui(sender="You", message=summary) # TODO: @David, why not self.orchestrator instead of "You"?
+
+        # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
+        with open(self.root / "src/prompts/task_requirements_summaries.txt", "r") as f:
+            prompt = f.read()
 
         tasks = self.orchestrator.answer(prompt)
         tasks = extract_json(
