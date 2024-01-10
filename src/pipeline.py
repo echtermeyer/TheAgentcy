@@ -2,6 +2,7 @@ from src.agents import Agent, HumanConversationWrapper, ConversationWrapper
 from PySide6.QtCore import QObject, Signal, QThread, QCoreApplication
 from pathlib import Path
 from src.utils import *
+import random
 import json
 
 
@@ -15,6 +16,7 @@ class Pipeline(QObject):
         
         self.root = Path(__file__).parent.parent
         self.description = command_line_args.description
+        self.fast_forward = command_line_args.fast_forward
         self.__setup_agents()
  
     def __transmit_to_gui(self, sender, message, is_question=False):
@@ -52,20 +54,29 @@ class Pipeline(QObject):
         """Start developing process"""
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
-        conv1 = HumanConversationWrapper(self.orchestrator)
-        for ai_message in conv1:
-            sender, message = ai_message
-            if not conv1.accepted:
-                user_response = self.__transmit_to_gui(sender=sender, message=message, is_question=True)
-                conv1.answer = user_response
-            else:
-                self.__transmit_to_gui(sender=sender, message=message)
+        if self.fast_forward == "no":
+            conv1 = HumanConversationWrapper(self.orchestrator)
+            for ai_message in conv1:
+                sender, message = ai_message
+                if not conv1.accepted:
+                    user_response = self.__transmit_to_gui(sender=sender, message=message, is_question=True)
+                    conv1.answer = user_response
+                else:
+                    self.__transmit_to_gui(sender=sender, message=message)
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
         with open(self.root / "src/prompts/po_tasks.txt", "r") as f:
             prompt = f.read()
 
+        if self.fast_forward == "yes":  # if user interacton is skipped, use a random predefined use case
+            with open(self.root / "src/example_websites/summaries.json") as f:
+                summaries = json.load(f)
+                summary = random.choice(list(summaries.values()))
+                self.__transmit_to_gui(sender="You", message=summary)
+                prompt = f"Forget everything I've said before and focus on the following. {summary} TASK: {prompt}"
+        
         tasks = self.orchestrator.answer(prompt)
+        print(tasks)
         tasks = extract_json(
             tasks, [("database", str), ("backend", str), ("frontend", str)]
         )
@@ -75,7 +86,6 @@ class Pipeline(QObject):
         self.develop("backend", tasks)
         self.develop("frontend", tasks)
 
-    
     def develop(self, layer, tasks):
         developer, tester, documenter = getattr(self, layer + "_dev"), getattr(self, layer + "_test"), getattr(self, layer + "_doc") # get agents for layer
 

@@ -26,4 +26,13 @@ if __name__ == "__main__":
         required=False,
     )
 
+    parser.add_argument(
+        "-ff",
+        "--fast_forward",
+        type=str,
+        default="no",
+        help="pass 'yes' to use predefined use case and skip interaction with orchestrator",
+        required=False,
+    )
+
     run(parser.parse_args())

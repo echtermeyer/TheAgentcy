@@ -147,7 +147,7 @@ class Gui(QMainWindow):
         self.text_input.clear()
         self.__enable_input(False)
 
-        message_widget = ChatMessageWidget("You", user_input, is_user=True)
+        message_widget = ChatMessageWidget("You", user_input)
         self.scroll_layout.insertWidget(-1, message_widget)
         QTimer.singleShot(100, lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))  
 
@@ -195,7 +195,7 @@ class Gui(QMainWindow):
 
 
 class ChatMessageWidget(QWidget):
-    def __init__(self, sender, message, is_user=False):
+    def __init__(self, sender, message):
         super().__init__()
 
         # Construct the path to the image
@@ -227,7 +227,7 @@ class ChatMessageWidget(QWidget):
         # Text Label
         self.text_label = QLabel(f"<b>{sender}</b>: {message}", self)
         self.text_label.setWordWrap(True)
-        text_background_color = "#C8CFE3" if is_user else "#E2DED4"
+        text_background_color = "#C8CFE3" if sender=="You" else "#E2DED4"
         self.text_label.setStyleSheet(f"""
             background-color: {text_background_color};
             border-radius: 10px;
@@ -237,7 +237,7 @@ class ChatMessageWidget(QWidget):
         # Layout
         layout = QHBoxLayout()
 
-        if is_user:
+        if sender=="You":
             # User message: Align to the right
             layout.addWidget(self.text_label, 1, alignment=Qt.AlignVCenter)  # Add text label first for right alignment
             layout.addWidget(self.image_label, alignment=Qt.AlignVCenter)    # Then image
