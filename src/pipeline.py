@@ -110,6 +110,5 @@ class Pipeline(QObject):
 
 
         # TODO: Improve Conversation between Doc & Tester. Tester is bad at answering questions (change prompting).
-        # TODO: DynamicModel.validate_json fails when validating documentation for backend, because there are Anführungsstriche within Anführungsstrichen
+        # TODO: DynamicModel.validate_json often fails when validating documentation 
         # TODO: GUI code formatting
-        
