@@ -59,7 +59,7 @@ class Pipeline(QObject):
                     model=agent["model"],
                     temperature=agent["temperature"],
                     parser=agent["parser"],
-                    prompt=self.root / f"src/characters/{agent['varname']}.txt",
+                    character=self.root / f"src/characters/{agent['varname']}.txt",
                 ),
             )
 
@@ -68,25 +68,36 @@ class Pipeline(QObject):
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
         if not self.fast_forward:
-            conv1 = HumanConversationWrapper(self.orchestrator)
-            for ai_message in conv1:
+            with open(self.root / "src/prompts/task_requirements_system.txt", "r") as f:
+                task_requirements_system = f.read()
+
+            with open(self.root / "src/prompts/task_requirements_conv.txt", "r") as f:
+                task_requirements_conv = f.read()
+
+            conversation_with_user = HumanConversationWrapper(
+                self.orchestrator,
+                task_requirements_system,
+                task_requirements_conv,
+            )
+
+            for ai_message in conversation_with_user:
                 sender, message = ai_message
-                if not conv1.accepted:
+                if not conversation_with_user.is_accepted():
                     user_response = self.__transmit_to_gui(
                         sender=sender, message=message, is_question=True
                     )
-                    conv1.answer = user_response
+                    conversation_with_user.set_user_response(user_response)
                 else:
                     self.__transmit_to_gui(sender=sender, message=message)
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
+        # TODO: Falsche Datei wird gelesen
         with open(self.root / "src/prompts/po_tasks.txt", "r") as f:
             prompt = f.read()
 
-        if (
-            self.fast_forward
-        ):  # if user interacton is skipped, use a random predefined use case
-            with open(self.root / "src/example_websites/summaries.json") as f:
+        # if user interacton is skipped, use a random predefined use case
+        if self.fast_forward:
+            with open(self.root / "src/setup/summaries.json") as f:
                 summaries = json.load(f)
                 summary = random.choice(list(summaries.values()))
                 self.__transmit_to_gui(sender="You", message=summary)
@@ -112,10 +123,9 @@ class Pipeline(QObject):
         message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {tasks['database']}"
         self.__transmit_to_gui(sender=self.orchestrator.name, message=message)
 
+        # TODO: Needs to be adjusted for Frontend dev (multiple formats)
         # 1b. Conversation: Dev & Tester
-        format = developer.parser["fields"][
-            0
-        ]  # TODO: Needs to be adjusted for Frontend dev (multiple formats)
+        format = developer.parser["fields"][0]
         start_query = (
             f"These are the requirements: {tasks[layer]} {output_format(format, True)}"
         )

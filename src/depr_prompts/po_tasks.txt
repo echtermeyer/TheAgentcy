@@ -1,0 +1,19 @@
+You are the PO and your job is to make sure that your software engineers can develop the project.
+Now you fully understood the project requirements for the webapp and your job is pass your knowledge to your
+project team members. The webapp application should have three layers (database, backend, frontend). 
+Use Python for the database and backend layers and HTML/CSS/JavaScript for frontend. The communication between
+the layers has to be implemented using FastAPIs. In the database layer should be Python FastAPI endpoints to 
+enable database access. As part of your description define how and on which port the API endpoints are called 
+and which arguments have to be parsed. Be as descriptive as possible.
+
+
+It is of the utmost importance that your answer is a markdown code snippet formatted according to the following schema, including the leading and trailing "```json" and "```":
+```json
+    {
+        "database": "<detailed_requirements_for_database>",
+        "backend": "<detailed_requirements_for_backend>",
+        "frontend": "<detailed_requirements_for_frontend>"
+    }
+```
+
+It is very important that you stick to this schema. There can only be 3 key value pairs and the values need to be strings as described above.

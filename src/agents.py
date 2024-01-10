@@ -10,6 +10,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.schema.messages import HumanMessage, AIMessage, SystemMessage
 
 from langchain.prompts import (
+    PromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
@@ -25,11 +26,11 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Agent:
     def __init__(
-        self, name: str, model: str, temperature: float, parser: dict, prompt: Path
+        self, name: str, model: str, temperature: float, parser: dict, character: Path
     ) -> None:
         self.__name: str = name
 
-        self.character: str = self.__load_agent_prompt(prompt)
+        self.character: str = self.__load_agent_prompt(character)
         self.chain: LLMChain = self.__setup_chain(model, temperature)
         self.parser: dict = parser
 
@@ -120,9 +121,9 @@ class ConversationWrapper:
             response = self.current_agent.answer(current_query, verbose=True)
             response = parse_response(response, self.current_agent.parser)
 
-            message = (
-                response["text"] if type(response) == dict else response
-            )  # Can be dict [tester or documenter] or code [dev]
+            # Can be dict [tester or documenter] or code [dev]
+            message = response["text"] if type(response) == dict else response
+
             self.accepted = (
                 response["accepted"]
                 if type(response) == dict and self.current_agent == self.approver
@@ -139,10 +140,11 @@ class ConversationWrapper:
                 else self.last_message_agent2
             )
 
+            # save now before updating self.current_agent
             return_values = (
                 self.current_agent.name,
                 message,
-            )  # save now before updating self.current_agent
+            )
 
             self.current_turn = (
                 self.current_turn + 1
@@ -160,32 +162,45 @@ class ConversationWrapper:
 
 
 class HumanConversationWrapper:
-    def __init__(self, agent1: Agent, max_turns: int = 10) -> None:
+    def __init__(
+        self,
+        agent1: Agent,
+        task_system: str,
+        task_conversation: str,
+        max_turns: int = 10,
+    ) -> None:
         self.agent1: Agent = agent1
         self.max_turns: int = max_turns
         self.current_turn: int = 0
 
-        self.answer = None
-        self.accepted = False
+        self.__user_response = None
+        self.__accepted = False
+
+        # Inject task system message and create prompt template for human conversation
+        self.agent1.inject_message(task_system, kind="system")
+        self.prompt_template = PromptTemplate.from_template(task_conversation)
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.accepted == False and self.current_turn == 0:
+        if self.__accepted == False and self.current_turn == 0:
             self.current_turn += 1
             return (
                 self.agent1.name,
                 f"Hello, my name is {self.agent1.name}. Me and my team are here to build custom web-applications based on your specific requirements. What project can we assist you with today?",
             )
 
-        elif self.accepted == False and self.current_turn < self.max_turns:
-            ai_response_txt = self.agent1.answer(self.answer, verbose=True)
+        elif self.__accepted == False and self.current_turn < self.max_turns:
+            # Insert user response into prompt template
+            prompt = self.prompt_template.format(user_response=self.__user_response)
+
+            ai_response_txt = self.agent1.answer(prompt, verbose=True)
             ai_response = parse_response(ai_response_txt, self.agent1.parser)
-            self.accepted, message = ai_response["accepted"], ai_response["text"]
+            self.__accepted, message = ai_response["accepted"], ai_response["text"]
             self.current_turn += 1
 
-            if self.accepted == True:
+            if self.__accepted == True:
                 message = (
                     "Thank you for specifying your requirements. We will start working on your project now! Here's a quick summary of your requirements: <br><br>"
                     + message
@@ -195,3 +210,9 @@ class HumanConversationWrapper:
 
         else:
             raise StopIteration
+
+    def set_user_response(self, user_response: str) -> None:
+        self.__user_response = user_response
+
+    def is_accepted(self) -> bool:
+        return self.__accepted
