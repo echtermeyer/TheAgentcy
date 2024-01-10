@@ -87,7 +87,14 @@ class Agent:
 
 
 class ConversationWrapper:
-    def __init__(self, agent1: Agent, agent2: Agent, start_query: str, approver: Agent, max_turns: int = 5) -> None:
+    def __init__(
+        self,
+        agent1: Agent,
+        agent2: Agent,
+        start_query: str,
+        approver: Agent,
+        max_turns: int = 5,
+    ) -> None:
         self.agent1: Agent = agent1
         self.agent2: Agent = agent2
         self.approver: Agent = approver
@@ -105,25 +112,51 @@ class ConversationWrapper:
 
     def __next__(self):
         if self.accepted == False and self.current_turn < self.max_turns:
-            current_query = self.last_message_agent2 if self.current_agent == self.agent1 else self.last_message_agent1
+            current_query = (
+                self.last_message_agent2
+                if self.current_agent == self.agent1
+                else self.last_message_agent1
+            )
             response = self.current_agent.answer(current_query, verbose=True)
             response = parse_response(response, self.current_agent.parser)
 
-            message = response["text"] if type(response) == dict else response # Can be dict [tester or documenter] or code [dev]
-            self.accepted = response["accepted"] if type(response) == dict and self.current_agent == self.approver else self.accepted
-            self.last_message_agent1 = message if self.current_agent == self.agent1 else self.last_message_agent1
-            self.last_message_agent2 = message if self.current_agent == self.agent2 else self.last_message_agent2
+            message = (
+                response["text"] if type(response) == dict else response
+            )  # Can be dict [tester or documenter] or code [dev]
+            self.accepted = (
+                response["accepted"]
+                if type(response) == dict and self.current_agent == self.approver
+                else self.accepted
+            )
+            self.last_message_agent1 = (
+                message
+                if self.current_agent == self.agent1
+                else self.last_message_agent1
+            )
+            self.last_message_agent2 = (
+                message
+                if self.current_agent == self.agent2
+                else self.last_message_agent2
+            )
 
-            return_values = (self.current_agent.name, message) # save now before updating self.current_agent
+            return_values = (
+                self.current_agent.name,
+                message,
+            )  # save now before updating self.current_agent
 
-            self.current_turn = self.current_turn + 1 if self.current_agent == self.agent2 else self.current_turn
-            self.current_agent = self.agent2 if self.current_agent == self.agent1 else self.agent1
+            self.current_turn = (
+                self.current_turn + 1
+                if self.current_agent == self.agent2
+                else self.current_turn
+            )
+            self.current_agent = (
+                self.agent2 if self.current_agent == self.agent1 else self.agent1
+            )
 
             return return_values
 
         else:
             raise StopIteration
-
 
 
 class HumanConversationWrapper:
@@ -141,7 +174,10 @@ class HumanConversationWrapper:
     def __next__(self):
         if self.accepted == False and self.current_turn == 0:
             self.current_turn += 1
-            return (self.agent1.name, f"Hello, my name is {self.agent1.name}. Me and my team are here to build custom web-applications based on your specific requirements. What project can we assist you with today?")
+            return (
+                self.agent1.name,
+                f"Hello, my name is {self.agent1.name}. Me and my team are here to build custom web-applications based on your specific requirements. What project can we assist you with today?",
+            )
 
         elif self.accepted == False and self.current_turn < self.max_turns:
             ai_response_txt = self.agent1.answer(self.answer, verbose=True)
@@ -150,7 +186,10 @@ class HumanConversationWrapper:
             self.current_turn += 1
 
             if self.accepted == True:
-                message = "Thank you for specifying your requirements. We will start working on your project now! Here's a quick summary of your requirements: <br><br>" + message
+                message = (
+                    "Thank you for specifying your requirements. We will start working on your project now! Here's a quick summary of your requirements: <br><br>"
+                    + message
+                )
 
             return (self.agent1.name, message)
 
