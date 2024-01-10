@@ -17,17 +17,25 @@ class Pipeline(QObject):
         self.root = Path(__file__).parent.parent
         self.description = command_line_args.description
         self.fast_forward = command_line_args.fast_forward
+        self.disable_gui = command_line_args.disable_gui
         self.__setup_agents()
  
     def __transmit_to_gui(self, sender, message, is_question=False):
-        self.to_gui_signal.emit(sender, message, is_question) # send signal to gui thread
-        self._pause_execution = True
-        while self._pause_execution: # sleep until gui thread has responded
-            QThread.msleep(100)  
-            QCoreApplication.processEvents()  # but check for incoming signals
+        if self.disable_gui:
+            print(f"\033[34m{sender}:\033[0m {message}")
+            if is_question:
+                terminal_input = input("\033[34mYour answer: \033[0m ")
+                return terminal_input
+            
+        else:
+            self.to_gui_signal.emit(sender, message, is_question) # send signal to gui thread
+            self._pause_execution = True
+            while self._pause_execution: # sleep until gui thread has responded
+                QThread.msleep(100)  
+                QCoreApplication.processEvents()  # but check for incoming signals
 
-        return self._input 
-    
+            return self._input 
+            
     def receive_from_gui(self, input):
         self._input = input
         self._pause_execution = False
@@ -54,7 +62,7 @@ class Pipeline(QObject):
         """Start developing process"""
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
-        if self.fast_forward == "no":
+        if not self.fast_forward:
             conv1 = HumanConversationWrapper(self.orchestrator)
             for ai_message in conv1:
                 sender, message = ai_message
@@ -68,7 +76,7 @@ class Pipeline(QObject):
         with open(self.root / "src/prompts/po_tasks.txt", "r") as f:
             prompt = f.read()
 
-        if self.fast_forward == "yes":  # if user interacton is skipped, use a random predefined use case
+        if self.fast_forward:  # if user interacton is skipped, use a random predefined use case
             with open(self.root / "src/example_websites/summaries.json") as f:
                 summaries = json.load(f)
                 summary = random.choice(list(summaries.values()))
@@ -76,11 +84,7 @@ class Pipeline(QObject):
                 prompt = f"Forget everything I've said before and focus on the following. {summary} TASK: {prompt}"
         
         tasks = self.orchestrator.answer(prompt)
-        print(tasks)
-        tasks = extract_json(
-            tasks, [("database", str), ("backend", str), ("frontend", str)]
-        )
-        print("tasks: ", tasks)
+        tasks = extract_json(tasks, [("database", str), ("backend", str), ("frontend", str)])
 
         self.develop("database", tasks)
         self.develop("backend", tasks)
@@ -108,7 +112,6 @@ class Pipeline(QObject):
         The project you are working on is about: {tasks[layer]}. Here is the final code created by the developer: '{final_code}'. Please ask as many clarifying question as you need in order to create an excellent and detailed documentation for the
         {layer} of the application. 
         """
-        print("start_query: ", start_query)
         conv3 = ConversationWrapper(documenter, tester, start_query, approver=documenter)
         for ai_message in conv3:
             sender, message = ai_message
@@ -117,8 +120,7 @@ class Pipeline(QObject):
         final_documentation = conv2.last_message_agent1        
         self.orchestrator.inject_message(str(final_documentation), kind="human") # add documentation to orchestrators memory / chat history
 
-
-
         # TODO: Improve Conversation between Doc & Tester. Tester is bad at answering questions (change prompting).
         # TODO: DynamicModel.validate_json often fails when validating documentation 
         # TODO: GUI code formatting
+
