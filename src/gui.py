@@ -149,7 +149,7 @@ class Gui(QMainWindow):
 
         message_widget = ChatMessageWidget("You", user_input, is_user=True)
         self.scroll_layout.insertWidget(-1, message_widget)
-        # self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()) # Scroll down as far as possible
+        QTimer.singleShot(100, lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))  
 
         self.to_pipeline_signal.emit(user_input)
 
@@ -158,7 +158,7 @@ class Gui(QMainWindow):
         
         message_widget = ChatMessageWidget(sender, message)
         self.scroll_layout.insertWidget(-1, message_widget)
-        # self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()) # Scroll down as far as possible
+        QTimer.singleShot(100, lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))  
 
         if is_question:
             self.__enable_input(True)
@@ -178,6 +178,7 @@ class Gui(QMainWindow):
             self.typing_sender = sender
             self.dots = 0
             self.scroll_layout.insertWidget(-1, self.typing_animation_widget)  # Insert at top
+            QTimer.singleShot(100, lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))            
             self.typing_animation_timer.start(300)
 
     def __stop_typing_animation(self):
@@ -186,6 +187,7 @@ class Gui(QMainWindow):
             self.is_typing_animation_running = False
             self.scroll_layout.removeWidget(self.typing_animation_widget)
             self.typing_animation_widget.setParent(None)  # Remove widget from layout
+            QTimer.singleShot(100, lambda: self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()))  
 
     def __update_typing_animation(self):
         self.dots += 1
