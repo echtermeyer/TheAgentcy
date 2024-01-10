@@ -149,7 +149,7 @@ class Gui(QMainWindow):
 
         message_widget = ChatMessageWidget("You", user_input, is_user=True)
         self.scroll_layout.insertWidget(-1, message_widget)
-        self.scroll_area.verticalScrollBar().setValue(9999) # Scroll down as far as possible
+        # self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()) # Scroll down as far as possible
 
         self.to_pipeline_signal.emit(user_input)
 
@@ -158,7 +158,7 @@ class Gui(QMainWindow):
         
         message_widget = ChatMessageWidget(sender, message)
         self.scroll_layout.insertWidget(-1, message_widget)
-        self.scroll_area.verticalScrollBar().setValue(9999) # Scroll down as far as possible
+        # self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum()) # Scroll down as far as possible
 
         if is_question:
             self.__enable_input(True)

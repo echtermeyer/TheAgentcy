@@ -11,4 +11,4 @@ The output should be a markdown code snippet formatted in the following schema, 
 }}
 ```
 
-Strictly follow this ouput structure. You have to provide a response that aligns to this specified schema.
+Strictly follow this output structure. You have to provide a response that aligns to this specified schema.

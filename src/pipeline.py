@@ -75,7 +75,7 @@ class Pipeline(QObject):
         self.develop("backend", tasks)
         self.develop("frontend", tasks)
 
-
+    
     def develop(self, layer, tasks):
         developer, tester, documenter = getattr(self, layer + "_dev"), getattr(self, layer + "_test"), getattr(self, layer + "_doc") # get agents for layer
 
@@ -86,21 +86,30 @@ class Pipeline(QObject):
         # 1b. Conversation: Dev & Tester
         format = developer.parser["fields"][0]  # TODO: Needs to be adjusted for Frontend dev (multiple formats)
         start_query = f"These are the requirements: {tasks[layer]} {output_format(format, True)}"
-        conv2 = ConversationWrapper(developer, tester, start_query)
+        conv2 = ConversationWrapper(developer, tester, start_query, approver=tester)
         for ai_message in conv2:
             sender, message = ai_message
             self.__transmit_to_gui(sender=sender, message=message)
 
-        # TODO: The produced code is not stored nor used. Needs to be implemented in the future. extract_code(code_str, output_type) can be used.
+        final_code = conv2.last_message_agent1 # TODO: Use code
 
         # 1c. Conversation: Documenter & Tester
         start_query = f"""
-        The project you are working on is about: {tasks[layer]}. Please ask as many clarifying question as you need in order to create an excellent and detailed documentation for the
+        The project you are working on is about: {tasks[layer]}. Here is the final code created by the developer: '{final_code}'. Please ask as many clarifying question as you need in order to create an excellent and detailed documentation for the
         {layer} of the application. 
         """
-        conv3 = ConversationWrapper(documenter, tester, start_query)
+        print("start_query: ", start_query)
+        conv3 = ConversationWrapper(documenter, tester, start_query, approver=documenter)
         for ai_message in conv3:
             sender, message = ai_message
             self.__transmit_to_gui(sender=sender, message=message)
-                    
-        self.orchestrator.inject_message(str(message), kind="human") # add documentation to orchestrators memory / chat history
+
+        final_documentation = conv2.last_message_agent1        
+        self.orchestrator.inject_message(str(final_documentation), kind="human") # add documentation to orchestrators memory / chat history
+
+
+
+        # TODO: Improve Conversation between Doc & Tester. Tester is bad at answering questions (change prompting).
+        # TODO: DynamicModel.validate_json fails when validating documentation for backend, because there are Anführungsstriche within Anführungsstrichen
+        # TODO: GUI code formatting
+        

@@ -87,33 +87,34 @@ class Agent:
 
 
 class ConversationWrapper:
-    # Implementation of the conversation between two agents. agent1 must be the agent that returns the final results
-    # TODO: Make agent 1 the agent that returns the final results
-    def __init__(self, agent1: Agent, agent2: Agent, start_query: str, max_turns: int = 5) -> None:
+    def __init__(self, agent1: Agent, agent2: Agent, start_query: str, approver: Agent, max_turns: int = 5) -> None:
         self.agent1: Agent = agent1
         self.agent2: Agent = agent2
-        self.max_turns: int = max_turns
+        self.approver: Agent = approver
 
+        self.last_message_agent1: str = None
+        self.last_message_agent2: str = start_query
+
+        self.max_turns: int = max_turns
+        self.accepted = False
         self.current_turn: int = 0
         self.current_agent = agent1
-        self.current_query = start_query
-
-        self.answer = None
-        self.accepted = False
 
     def __iter__(self):
         return self
 
     def __next__(self):
         if self.accepted == False and self.current_turn < self.max_turns:
-
-            response = self.current_agent.answer(self.current_query, verbose=True)
+            current_query = self.last_message_agent2 if self.current_agent == self.agent1 else self.last_message_agent1
+            response = self.current_agent.answer(current_query, verbose=True)
             response = parse_response(response, self.current_agent.parser)
 
-            self.accepted = response["accepted"] if type(response) == dict and self.current_agent == self.agent2 else self.accepted
-            self.current_query = response["text"] if type(response) == dict else response
+            message = response["text"] if type(response) == dict else response # Can be dict [tester or documenter] or code [dev]
+            self.accepted = response["accepted"] if type(response) == dict and self.current_agent == self.approver else self.accepted
+            self.last_message_agent1 = message if self.current_agent == self.agent1 else self.last_message_agent1
+            self.last_message_agent2 = message if self.current_agent == self.agent2 else self.last_message_agent2
 
-            return_values = (self.current_agent.name, self.current_query) # save now before updating self.current_agent
+            return_values = (self.current_agent.name, message) # save now before updating self.current_agent
 
             self.current_turn = self.current_turn + 1 if self.current_agent == self.agent2 else self.current_turn
             self.current_agent = self.agent2 if self.current_agent == self.agent1 else self.agent1
