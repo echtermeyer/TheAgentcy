@@ -1,11 +1,18 @@
+# from src.pipeline import Pipeline
+from PySide6.QtWidgets import QApplication
+from src.gui import Gui
 import argparse
+import sys
 
-from src.pipeline import Pipeline
 
+def run(command_line_args):
+    app = QApplication(sys.argv)
+    main_window = Gui(command_line_args)
+    main_window.show()
+    sys.exit(app.exec())
 
-def run(args):
-    pipeline = Pipeline()
-    pipeline.start()
+    # pipeline = Pipeline()
+    # pipeline.start()
 
 
 if __name__ == "__main__":

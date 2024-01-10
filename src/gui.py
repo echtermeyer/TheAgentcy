@@ -1,53 +1,37 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QScrollArea, QLabel, QLineEdit
-from PySide6.QtCore import QObject, Signal, QThread, Qt, QEvent, QTimer
-from PySide6.QtGui import QCursor, QPainter, QBrush, QPen, QPixmap, QIcon
-
-import sys
-
-from PySide6.QtGui import QPixmap
+import os
 from pathlib import Path
+from src.pipeline import Pipeline
+from PySide6.QtCore import QThread, Qt, QEvent, QTimer, QCoreApplication, Signal
+from PySide6.QtGui import QCursor, QPainter, QBrush, QPen, QPixmap, QIcon, QPixmap
+from PySide6.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QHBoxLayout, QScrollArea, QLabel, QLineEdit, QMessageBox
 
 
-class Pipeline(QObject):
-    message_signal = Signal(str, str, bool)
+class Gui(QMainWindow):
+    to_pipeline_signal = Signal(str) # For communication with pipeline thread
 
-    def __init__(self):
+    def __init__(self, command_line_args):
         super().__init__()
-        self._input = None
-        self._pause_execution = False
+        self.__setup_gui_layout()
 
-    def run(self):
-        self.send_message(sender="Santiago", message="Hi there!")
-        response = self.send_message(sender="Amsterdam", message="What is your name?", is_question=True)
+        # The main thread of this program runs the GUI, while the pipeline (which contains the main logic) runs in a separate worker thread
+        # Threading needed to run the pipeline while retaining interactivity of GUI. Communication between threads is done via signals.
+        self.pipeline = Pipeline(command_line_args)
+        self.pipeline_thread = QThread() 
+        self.pipeline.moveToThread(self.pipeline_thread)
 
-        response = self.send_message(sender="Nikosia", message=f"Hi {response}, how is it going?", is_question=True)
-        self.send_message(sender="Bukarest", message="Great, Bye!")
-        # TBC
- 
-    def send_message(self, sender, message, is_question=False):
-        self.message_signal.emit(sender, message, is_question)
-        self._pause_execution = True
+        self.pipeline.to_gui_signal.connect(self.__on_message_received, Qt.QueuedConnection) # If the pipeline thread emits a signal, call  gui.__on_message_received()
+        self.to_pipeline_signal.connect(self.pipeline.receive_from_gui, Qt.QueuedConnection) # If the gui thread emits a signal, call pipeline.receive_from_gui()
+        
+        self.pipeline_thread.started.connect(self.pipeline.start)  # Run the pipeline when the thread starts
+        self.pipeline_thread.start() # Start the thread
 
-        while self._pause_execution:
-            QThread.msleep(100)  
-
-        return self._input 
-    
-    def receive_message(self, input=None):
-        self._input = input
-        self._pause_execution = False
-    
-
-class ChatWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-
+    def __setup_gui_layout(self):
         # Set window properties
-        self.setWindowTitle("Mutiagent Development Suite")
+        self.setWindowTitle("Mutiagent Development Suite") 
         self.setGeometry(100, 100, 800, 600)
 
         # Set the window icon
-        icon_path = Path(__file__).parent / "app_logo.png"  # Replace with the path to your icon file
+        icon_path = Path(__file__).parent / "media" / "app_logo.png"  # Replace with the path to your icon file
         self.setWindowIcon(QIcon(str(icon_path)))
 
         # Scroll Area and Container for Chat Messages
@@ -62,7 +46,6 @@ class ChatWindow(QMainWindow):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setWidget(self.scroll_widget)
         self.scroll_area.setObjectName("myScrollArea")  # unique object name for styling without affecting child widgets
-
         
         # Create a text edit for multi-line text input
         self.text_input = QLineEdit(self)
@@ -71,13 +54,13 @@ class ChatWindow(QMainWindow):
 
         # Create a send button
         self.send_button = QPushButton("Send", self)
-        self.send_button.clicked.connect(self.on_send_clicked)
+        self.send_button.clicked.connect(self.__on_send_clicked)
         self.send_button.setCursor(QCursor(Qt.PointingHandCursor))
         
         # Typing animation setup
         self.typing_animation_widget = TypingAnimationWidget()
         self.typing_animation_timer = QTimer(self)
-        self.typing_animation_timer.timeout.connect(self.update_typing_animation)
+        self.typing_animation_timer.timeout.connect(self.__update_typing_animation)
         self.is_typing_animation_running = False
         self.dots = 0
     
@@ -92,24 +75,18 @@ class ChatWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
         # Disable the input field and send button initially
-        self.enable_input(False)
+        self.__enable_input(False)
 
         # Apply styling to certain widgets
         self.__apply_styling()
 
-        # Initialize the program and the worker thread
-        # Threading needed to run the pipeline while retaining interactivity of GUI
-        self.pipeline = Pipeline()
-        self.pipeline_thread = QThread() 
-        self.pipeline.moveToThread(self.pipeline_thread)
-
-        self.pipeline_thread.started.connect(self.pipeline.run)
-        self.pipeline.message_signal.connect(self.on_message_received)
-        self.pipeline_thread.start()
-
     def __apply_styling(self):
          # border-color = background-color - 20 brightness
-
+        
+        self.setStyleSheet("""
+            background-color: #E6E6E6; /* Dark grey background */
+        """)
+                
         self.send_button.setStyleSheet("""
             QPushButton {
                 background-color: #6D7CA3;
@@ -124,6 +101,9 @@ class ChatWindow(QMainWindow):
             }
             QPushButton:disabled {
                 background-color: #E6DFD9;
+                border-style: solid;
+                border-width: 0.5px;
+                border-color: #B3ADA8;
                 color: #1E1F21;
             }
             QPushButton:hover:enabled {
@@ -155,52 +135,44 @@ class ChatWindow(QMainWindow):
             background-color: #FFFFFF;
         """)
 
-
-
-
-
-
-    def enable_input(self, enable: bool):
+    def __enable_input(self, enable: bool):
         self.send_button.setEnabled(enable)
 
-    def on_message_received(self, sender, message, is_question):
-        self.start_typing_animation(sender)
-        QTimer.singleShot(2000, lambda: self.add_message_to_scroll_area(sender, message, is_question))
+    def __on_message_received(self, sender, message, is_question):
+        self.__start_typing_animation(sender)
+        QTimer.singleShot(2000, lambda: self.__add_message_to_scroll_area(sender, message, is_question))
 
-    def on_send_clicked(self):
+    def __on_send_clicked(self):
         user_input = self.text_input.text()
+        self.text_input.clear()
+        self.__enable_input(False)
 
         message_widget = ChatMessageWidget("You", user_input, is_user=True)
         self.scroll_layout.insertWidget(-1, message_widget)
-        self.scroll_area.verticalScrollBar().setValue(0) # Adjust scroll position if needed
+        self.scroll_area.verticalScrollBar().setValue(9999) # Scroll down as far as possible
 
-        self.text_input.clear()
-        self.enable_input(False)
-        self.pipeline.receive_message(user_input)
+        self.to_pipeline_signal.emit(user_input)
 
-
-    def add_message_to_scroll_area(self, sender, message, is_question):
-        self.stop_typing_animation()
+    def __add_message_to_scroll_area(self, sender, message, is_question=False):
+        self.__stop_typing_animation()
         
         message_widget = ChatMessageWidget(sender, message)
         self.scroll_layout.insertWidget(-1, message_widget)
-        self.scroll_area.verticalScrollBar().setValue(0) # Adjust scroll position if needed
+        self.scroll_area.verticalScrollBar().setValue(9999) # Scroll down as far as possible
 
         if is_question:
-            self.enable_input(True)
+            self.__enable_input(True)
         else:
-            self.pipeline.receive_message() # Continue pipeline execution
-
+            self.to_pipeline_signal.emit(None) # Continue pipeline execution
 
     def eventFilter(self, obj, event):
         # adds keyboard control
         if obj == self.text_input and event.type() == QEvent.KeyPress and event.key() in [Qt.Key_Return, Qt.Key_Enter] and self.send_button.isEnabled():
-            self.on_send_clicked()
+            self.__on_send_clicked()
             return True
         return super().eventFilter(obj, event)
    
-
-    def start_typing_animation(self, sender):
+    def __start_typing_animation(self, sender):
         if not self.is_typing_animation_running:
             self.is_typing_animation_running = True
             self.typing_sender = sender
@@ -208,18 +180,16 @@ class ChatWindow(QMainWindow):
             self.scroll_layout.insertWidget(-1, self.typing_animation_widget)  # Insert at top
             self.typing_animation_timer.start(300)
 
-    def stop_typing_animation(self):
+    def __stop_typing_animation(self):
         if self.is_typing_animation_running:
             self.typing_animation_timer.stop()
             self.is_typing_animation_running = False
             self.scroll_layout.removeWidget(self.typing_animation_widget)
             self.typing_animation_widget.setParent(None)  # Remove widget from layout
 
-    def update_typing_animation(self):
+    def __update_typing_animation(self):
         self.dots += 1
         self.typing_animation_widget.update_text(self.typing_sender, self.dots)
-
-
 
 
 class ChatMessageWidget(QWidget):
@@ -227,8 +197,13 @@ class ChatMessageWidget(QWidget):
         super().__init__()
 
         # Construct the path to the image
-        image_path = str(Path(__file__).parent / "headshots" / f"{sender.capitalize()}.jpg")
+        image_path = str(Path(__file__).parent / "media" / "headshots" / f"{sender.capitalize()}.jpg")
         
+        # For debugging until final decision on bot names is made
+        if not os.path.exists(image_path): 
+            new_sender = self.__translate_name(sender)
+            image_path = str(Path(__file__).parent / "media" / "headshots" / f"{new_sender.capitalize()}.jpg")
+
         # Load the image into QPixmap and make it circular
         pixmap = QPixmap(image_path)
         mask = QPixmap(pixmap.size())
@@ -274,6 +249,21 @@ class ChatMessageWidget(QWidget):
 
         self.setLayout(layout)
 
+    def __translate_name(self, name):
+        """For debugging purposes until final decision on names is made"""
+        d = {
+            "Orchestrator": "Santiago",
+            "Database Dev": "Bukarest",
+            "Database Tester": "Testarest",
+            "Database Doc": "Docarest",
+            "Backend Dev": "Nikosia",
+            "Backend Tester": "Testosia",
+            "Backend Doc": "Docosia",
+            "Frontend Dev": "Amsterdam",
+            "Frontend Tester": "Testerdam",
+            "Frontend Doc": "Docerdam",
+        }
+        return d[name]
 
 
 class TypingAnimationWidget(QWidget):
@@ -287,23 +277,3 @@ class TypingAnimationWidget(QWidget):
     def update_text(self, sender, dots):
         self.label.setText(f"{sender} is typing{'.' * (dots % 4)}")
 
-
-
-
-
-def main():
-    app = QApplication(sys.argv)
-    app.setStyleSheet("""
-        QMainWindow {
-            background-color: #E6E6E6; /* Dark grey background */
-        }
-    """)
-                         
-
-    main_window = ChatWindow()
-    main_window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    main()
