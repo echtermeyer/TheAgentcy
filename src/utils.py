@@ -1,10 +1,11 @@
+import re
 import json
 
 from pathlib import Path
-import re
 
-from pydantic import BaseModel, ValidationError
+
 from typing import Any, Tuple, List, Dict
+from pydantic import BaseModel, ValidationError
 
 
 def write_str_to_file(string: str, full_path: Path) -> str:

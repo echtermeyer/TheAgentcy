@@ -1,0 +1,12 @@
+Your next task as the PO is to create the detailed tasks for your team. Write down what your team mates from "database", "backend" and "frontend" should work on by defining their requirements.
+
+It is of the utmost importance that your answer is a markdown code snippet formatted according to the following schema, including the leading and trailing "```json" and "```":
+```json
+    {
+        "database": "<detailed_requirements_for_database>",
+        "backend": "<detailed_requirements_for_backend>",
+        "frontend": "<detailed_requirements_for_frontend>"
+    }
+```
+
+It is very important that you stick to this schema. There can only be 3 key value pairs and the values need to be strings as described above.
