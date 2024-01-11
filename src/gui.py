@@ -225,7 +225,9 @@ class ChatMessageWidget(QWidget):
         self.image_label.setFixedSize(50, 50)
 
         # Text Label
-        self.text_label = QLabel(f"<b>{sender}</b>: {message}", self)
+        self.text_label = QLabel(self)
+        formatted_message = message.replace("\n", "<br>")  # Enables preservation of line breaks in code blocks
+        self.text_label.setText(f"<b>{sender}</b>: {formatted_message}")
         self.text_label.setWordWrap(True)
         text_background_color = "#C8CFE3" if sender=="You" else "#E2DED4"
         self.text_label.setStyleSheet(f"""
