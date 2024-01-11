@@ -59,9 +59,11 @@ class Pipeline(QObject):
                     name=agent["name"],
                     model=agent["model"],
                     temperature=agent["temperature"],
+                    prompts=agent["prompts"],
                     parser=agent["parser"],
                     varname=agent["varname"],
                     character=self.root / f"src/characters/{agent['varname']}.txt",
+                    root=self.root,
                 ),
             )
 
@@ -70,17 +72,7 @@ class Pipeline(QObject):
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
         if not self.fast_forward:
-            with open(self.root / "src/prompts/task_requirements_system.txt", "r") as f:
-                task_requirements_system = f.read()
-
-            with open(self.root / "src/prompts/task_requirements_conv.txt", "r") as f:
-                task_requirements_conv = f.read()
-
-            conversation_with_user = HumanConversationWrapper(
-                self.orchestrator,
-                task_requirements_system,
-                task_requirements_conv,
-            )
+            conversation_with_user = HumanConversationWrapper(self.orchestrator)
 
             for ai_message in conversation_with_user:
                 sender, message = ai_message
@@ -95,29 +87,25 @@ class Pipeline(QObject):
         # If user interacton is skipped, use a random predefined use case.
         # The predefined use case is added to the memory of the orchestrator.
         if self.fast_forward:
-            with open(self.root / "src/setup/summaries.json") as f:
-                summaries = json.load(f)
+            with open(self.root / "src/setup/summaries.json") as file:
+                summaries = json.load(file)
                 summary = random.choice(list(summaries.values()))
 
                 self.orchestrator.inject_message(summary, kind="ai")
-                self.__transmit_to_gui(
-                    sender="You", message=summary
-                )  # TODO: @David, why not self.orchestrator instead of "You"?
+                self.__transmit_to_gui(sender="You", message=summary)
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
-        with open(self.root / "src/prompts/task_requirements_summaries.txt", "r") as f:
-            prompt = f.read()
-
-        tasks = self.orchestrator.answer(prompt)
-        tasks = extract_json(
-            tasks, [("database", str), ("backend", str), ("frontend", str)]
+        summarization_task = self.orchestrator.get_prompt("summarize")
+        requirements = self.orchestrator.answer(summarization_task)
+        requirements = extract_json(
+            requirements, [("database", str), ("backend", str), ("frontend", str)]
         )
 
-        self.develop("database", tasks)
-        self.develop("backend", tasks)
-        self.develop("frontend", tasks)
+        self.develop("database", requirements)
+        self.develop("backend", requirements)
+        self.develop("frontend", requirements)
 
-    def develop(self, layer, tasks):
+    def develop(self, layer, requirements):
         developer, tester, documenter = (
             getattr(self, layer + "_dev"),
             getattr(self, layer + "_test"),
@@ -125,37 +113,45 @@ class Pipeline(QObject):
         )  # get agents for layer
 
         # 1a. Delegation: Orchestrator & Dev - Layer Dev receives tasks from Orchestrator
-        message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {tasks['database']}"
+        message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {requirements['database']}"
         self.__transmit_to_gui(sender=self.orchestrator.name, message=message)
 
         # TODO: Needs to be adjusted for Frontend dev (multiple formats)
         # 1b. Conversation: Dev & Tester
         format = developer.parser["fields"][0]
 
-        with open(self.root / f"src/prompts/{developer.varname}_first.txt", "r") as f:
-            conv2_starter_template = f.read()
-            conv2_starter_template = PromptTemplate.from_template(
-                conv2_starter_template
-            )
+        conv2_dev_kickoff = developer.get_prompt("kickoff")
+        conv2_dev_kickoff = PromptTemplate.from_template(conv2_dev_kickoff)
 
-        conv2_starter_prompt = conv2_starter_template.format(
-            requirements=tasks[layer], output_format=output_format(format, True)
+        if layer == "database":
+            language = "SQL"
+        elif layer == "backend":
+            language = "python"
+        elif layer == "frontend":
+            language = "HTML/CSS/JavaScript"
+
+        conv2_dev_kickoff = conv2_dev_kickoff.format(
+            language=language,
+            requirements=requirements[layer],
+            output_format=output_format(format, True),
         )
 
-        with open(self.root / f"src/prompts/{developer.varname}_second.txt", "r") as f:
-            conv2_developer_prompt = f.read()
+        conv2_dev_followup = developer.get_prompt("followup")
+        conv2_test_followup = tester.get_prompt("followup")
 
-        with open(self.root / f"src/prompts/{tester.varname}.txt", "r") as f:
-            conv2_tester_prompt = f.read()
+        print("BEFORE T1")
+        print(conv2_dev_followup)
+        print("BEFORE T2")
+        print(conv2_test_followup)
 
         conv2 = ConversationWrapper(
             agent1=developer,
             agent2=tester,
-            start_query=conv2_starter_prompt,
+            start_query=conv2_dev_kickoff,
             agent1_format=output_format(format, True),
             agent2_format=None,
-            agent1_template=conv2_developer_prompt,
-            agent2_template=conv2_tester_prompt,
+            agent1_template=conv2_dev_followup,
+            agent2_template=conv2_test_followup,
             approver=tester,
         )
         for ai_message in conv2:
@@ -165,17 +161,18 @@ class Pipeline(QObject):
         final_code = conv2.last_message_agent1  # TODO: Use code
 
         # 1c. Conversation: Documenter creates documentation
-        with open(self.root / f"src/prompts/{documenter.varname}.txt", "r") as f:
-            prompt_template = f.read()
-            prompt_template = PromptTemplate.from_template(prompt_template)
+        conv3_document = documenter.get_prompt("document")  
+        conv3_document = PromptTemplate.from_template(conv3_document)
+        conv3_document = conv3_document.format(
+            requirements=requirements[layer], kind=layer, code=final_code
+        )
 
-        prompt = prompt_template.format(requirements=tasks[layer], code=final_code)
-        documentation = documenter.answer(prompt)
+        documentation = documenter.answer(conv3_document)
         self.__transmit_to_gui(sender=documenter.name, message=documentation)
 
         # add documentation to orchestrators memory / chat history
         self.orchestrator.inject_message(str(documentation), kind="human")
-        
+
         # TODO: Improve Conversation between Doc & Tester. Tester is bad at answering questions (change prompting).
         # TODO: DynamicModel.validate_json often fails when validating documentation
         # TODO: GUI code formatting

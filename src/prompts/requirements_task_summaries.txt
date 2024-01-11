@@ -1,0 +1,10 @@
+Your next task as the PO is to create the detailed tasks for your team. Write down what your team mates from "database", "backend" and "frontend" should work on by defining their requirements.
+
+It is very important that you stick to this schema. There can only be 3 key value pairs and the values need to be strings as described above.
+```json
+{{
+	"database": string (do not make it mulitline, follow json syntax) // Write down what your team mates from "database" should work on by defining their requirements.
+	"backend": string (do not make it mulitline, follow json syntax) // Write down what your team mates from "backend" should work on by defining their requirements.
+    "frontend": string (do not make it mulitline, follow json syntax) // Write down what your team mates from "frontend" should work on by defining their requirements.
+}}
+```

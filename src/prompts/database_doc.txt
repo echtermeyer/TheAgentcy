@@ -1,8 +1,0 @@
-The project in question is defined by the following requirements:
-{requirements}
-
-This is the corresponding SQL code that the database developer wrote:
-{code}
-
-The documentation should be formatted as markdown. 
-Your documentation:

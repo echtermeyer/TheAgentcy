@@ -1,6 +1,0 @@
-You just received the requirements by your manager. Create the required python code for the following requirements:
-{requirements}
-
-Those are your formatting instructions:
-{output_format}
-Only output this, and put your generated code in the json. Do not output any additional comments.

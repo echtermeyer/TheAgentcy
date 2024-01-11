@@ -32,12 +32,17 @@ class Agent:
         model: str,
         temperature: float,
         parser: dict,
+        prompts: dict,
         character: Path,
+        root: Path,
     ) -> None:
+        self.root: Path = root
+
         self.__name: str = name
         self.__varname: str = varname
 
-        self.character: str = self.__load_agent_prompt(character)
+        self.character: str = self.__load_agent_character(character)
+        self.templates: dict = self.__load_prompt_templates(prompts)
         self.chain: LLMChain = self.__setup_chain(model, temperature)
         self.parser: dict = parser
 
@@ -49,7 +54,7 @@ class Agent:
     def varname(self):
         return self.__varname
 
-    def __load_agent_prompt(self, prompt: Path) -> str:
+    def __load_agent_character(self, prompt: Path) -> str:
         with open(prompt, "r") as f:
             agent_prompt = f.read()
 
@@ -74,6 +79,12 @@ class Agent:
         )
 
         return LLMChain(llm=llm, prompt=prompt, verbose=False, memory=memory)
+
+    def __load_prompt_templates(self, paths: dict) -> dict:
+        return {key: open(self.root / path, "r").read() for key, path in paths.items()}
+
+    def get_prompt(self, key: str) -> str:
+        return self.templates[key]
 
     def inject_message(self, text: str, kind: str = "human") -> None:
         if kind == "human":
@@ -145,10 +156,11 @@ class ConversationWrapper:
                         output_format=self.agent1_format,
                     )
                 else:
+                    print(2)
                     current_query = self.agent2_template.format(
                         code=self.last_message_agent1
                     )
-            
+
             response = self.current_agent.answer(current_query, verbose=True)
             response = parse_response(response, self.current_agent.parser)
 
@@ -196,11 +208,10 @@ class HumanConversationWrapper:
     def __init__(
         self,
         agent1: Agent,
-        task_system: str,
-        task_conversation: str,
         max_turns: int = 10,
     ) -> None:
         self.agent1: Agent = agent1
+
         self.max_turns: int = max_turns
         self.current_turn: int = 0
 
@@ -208,8 +219,12 @@ class HumanConversationWrapper:
         self.__accepted = False
 
         # Inject task system message and create prompt template for human conversation
-        self.agent1.inject_message(task_system, kind="system")
-        self.prompt_template = PromptTemplate.from_template(task_conversation)
+        self.agent1.inject_message(
+            agent1.get_prompt("systemize"), kind="system"
+        )
+        self.prompt_template = PromptTemplate.from_template(
+            agent1.get_prompt("conversize")
+        )
 
     def __iter__(self):
         return self

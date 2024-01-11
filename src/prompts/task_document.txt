@@ -1,7 +1,7 @@
 The project in question is defined by the following requirements:
 {requirements}
 
-This is the corresponding frontend code that the backend developer wrote:
+This is the corresponding {kind} code that the {kind} developer wrote:
 {code}
 
 The documentation should be formatted as markdown. 
