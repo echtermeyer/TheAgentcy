@@ -1,8 +1,6 @@
 import re
-import json
 
 from pathlib import Path
-
 
 from typing import Any, Tuple, List, Dict
 from pydantic import BaseModel, ValidationError
@@ -13,17 +11,6 @@ def write_str_to_file(string: str, full_path: Path) -> str:
         file.write(string)
 
     return full_path
-
-
-def extract_json_from_str(text: str) -> Dict:
-    start = text.find("{")
-    end = text.rfind("}") + 1
-    extracted = text[start:end]
-
-    if extracted:
-        return json.loads(extracted)
-    else:
-        raise ValueError("No valid JSON found")
 
 
 def extract_code(input_string, language):
@@ -104,29 +91,3 @@ def parse_response(response: str, parser: dict):
     else:
         raise ("Invalid type in parser. Use code or json")
     return response  # either the Code string or json
-
-
-# test_input ="""```json
-# {
-#         "accepted": true,
-#         "text": "The database system to be used is PostgreSQL. The database schema for storing the user's email and name will have a table named 'newsletter_signup' with columns 'id' (integer, primary key), 'email' (string), and 'name' (string). The 'email' field will have a unique constraint to ensure each email is unique. The 'name' field will have a length constraint of maximum 100 characters. There will be authentication and authorization mechanisms using API tokens for accessing the API endpoints. The expected HTTP request methods for the CRUD operations are POST for create, GET for read, PUT for update, and DELETE for delete. Input validation will be required to ensure that the email is in a valid format and that the name is not empty. Error handling will include returning appropriate HTTP status codes for different scenarios such as validation errors or database operation failures."
-# }
-# ```
-# """
-
-
-# test_fields=[("accepted", bool), ("text", str)]
-# test = extract_json(test_input, test_fields)
-# print(type(test))
-# print(test)
-# print("")
-# print(test["text"])
-
-
-# test_respone="This is a respone."
-# with open("src/setup/agents.json", "r") as file:
-#             config = json.load(file)
-# for agent in config:
-#     if agent.get("varname") == "database_test":
-#          parser = agent["parser"]
-# print(parse_response(test_input, 0, parser))

@@ -139,11 +139,6 @@ class Pipeline(QObject):
         conv2_dev_followup = developer.get_prompt("followup")
         conv2_test_followup = tester.get_prompt("followup")
 
-        print("BEFORE T1")
-        print(conv2_dev_followup)
-        print("BEFORE T2")
-        print(conv2_test_followup)
-
         conv2 = ConversationWrapper(
             agent1=developer,
             agent2=tester,
