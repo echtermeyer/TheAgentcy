@@ -1,4 +1,6 @@
 The tester has some feedback for you. Please implement it and fix bugs:
 {feedback}
-{format_instructions}
+
+Those are your formatting instructions:
+{output_format}
 Only output this, and put your generated code in the json. Do not output any additional comments.

@@ -2,6 +2,7 @@ import json
 import random
 
 from pathlib import Path
+from langchain.prompts import PromptTemplate
 
 from PySide6.QtCore import QObject, Signal, QThread, QCoreApplication
 
@@ -59,6 +60,7 @@ class Pipeline(QObject):
                     model=agent["model"],
                     temperature=agent["temperature"],
                     parser=agent["parser"],
+                    varname=agent["varname"],
                     character=self.root / f"src/characters/{agent['varname']}.txt",
                 ),
             )
@@ -98,7 +100,9 @@ class Pipeline(QObject):
                 summary = random.choice(list(summaries.values()))
 
                 self.orchestrator.inject_message(summary, kind="ai")
-                self.__transmit_to_gui(sender="You", message=summary) # TODO: @David, why not self.orchestrator instead of "You"?
+                self.__transmit_to_gui(
+                    sender="You", message=summary
+                )  # TODO: @David, why not self.orchestrator instead of "You"?
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
         with open(self.root / "src/prompts/task_requirements_summaries.txt", "r") as f:
@@ -127,33 +131,51 @@ class Pipeline(QObject):
         # TODO: Needs to be adjusted for Frontend dev (multiple formats)
         # 1b. Conversation: Dev & Tester
         format = developer.parser["fields"][0]
-        start_query = (
-            f"These are the requirements: {tasks[layer]} {output_format(format, True)}"
+
+        with open(self.root / f"src/prompts/{developer.varname}_first.txt", "r") as f:
+            conv2_starter_template = f.read()
+            conv2_starter_template = PromptTemplate.from_template(
+                conv2_starter_template
+            )
+
+        conv2_starter_prompt = conv2_starter_template.format(
+            requirements=tasks[layer], output_format=output_format(format, True)
         )
-        conv2 = ConversationWrapper(developer, tester, start_query, approver=tester)
+
+        with open(self.root / f"src/prompts/{developer.varname}_second.txt", "r") as f:
+            conv2_developer_prompt = f.read()
+
+        with open(self.root / f"src/prompts/{tester.varname}.txt", "r") as f:
+            conv2_tester_prompt = f.read()
+
+        conv2 = ConversationWrapper(
+            agent1=developer,
+            agent2=tester,
+            start_query=conv2_starter_prompt,
+            agent1_format=output_format(format, True),
+            agent2_format=None,
+            agent1_template=conv2_developer_prompt,
+            agent2_template=conv2_tester_prompt,
+            approver=tester,
+        )
         for ai_message in conv2:
             sender, message = ai_message
             self.__transmit_to_gui(sender=sender, message=message)
 
         final_code = conv2.last_message_agent1  # TODO: Use code
 
-        # 1c. Conversation: Documenter & Tester
-        start_query = f"""
-        The project you are working on is about: {tasks[layer]}. Here is the final code created by the developer: '{final_code}'. Please ask as many clarifying question as you need in order to create an excellent and detailed documentation for the
-        {layer} of the application. 
-        """
-        conv3 = ConversationWrapper(
-            documenter, tester, start_query, approver=documenter
-        )
-        for ai_message in conv3:
-            sender, message = ai_message
-            self.__transmit_to_gui(sender=sender, message=message)
+        # 1c. Conversation: Documenter creates documentation
+        with open(self.root / f"src/prompts/{documenter.varname}.txt", "r") as f:
+            prompt_template = f.read()
+            prompt_template = PromptTemplate.from_template(prompt_template)
 
-        final_documentation = conv2.last_message_agent1
-        self.orchestrator.inject_message(
-            str(final_documentation), kind="human"
-        )  # add documentation to orchestrators memory / chat history
+        prompt = prompt_template.format(requirements=tasks[layer], code=final_code)
+        documentation = documenter.answer(prompt)
+        self.__transmit_to_gui(sender=documenter.name, message=documentation)
 
+        # add documentation to orchestrators memory / chat history
+        self.orchestrator.inject_message(str(documentation), kind="human")
+        
         # TODO: Improve Conversation between Doc & Tester. Tester is bad at answering questions (change prompting).
         # TODO: DynamicModel.validate_json often fails when validating documentation
         # TODO: GUI code formatting

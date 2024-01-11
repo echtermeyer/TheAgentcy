@@ -73,6 +73,7 @@ def create_model(name: str, fields: List[Tuple[str, Any]]) -> type:
 
 def extract_json(input_str: str, fields: List[Tuple[str, Any]]) -> dict:
     # Create a dynamic model
+    print(f"INPUT_STR: {input_str}")
     DynamicModel = create_model("DynamicModel", fields)
 
     # Extract JSON string from the input

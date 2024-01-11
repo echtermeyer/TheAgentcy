@@ -1,5 +1,5 @@
-You just received the requirements by your manager. Create the required SQL statements for the following requirements:
-{requirements}
+The tester has some feedback for you. Please implement it and fix bugs:
+{feedback}
 
 Those are your formatting instructions:
 {output_format}

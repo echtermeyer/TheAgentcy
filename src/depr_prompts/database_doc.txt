@@ -1,5 +1,0 @@
-You are a specialist for writing a documentation for code. It is your responsibility to analyze some given code and write a short description, so that someone else can understand what functionalities there are. You will be provided with some SQL code that is used to create a database. It is your task to write a short documentation that describes what tables are created.
-This is the SQL code:
-{database_code}
-
-{format_instructions}

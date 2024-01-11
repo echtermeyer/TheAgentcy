@@ -26,9 +26,16 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class Agent:
     def __init__(
-        self, name: str, model: str, temperature: float, parser: dict, character: Path
+        self,
+        name: str,
+        varname: str,
+        model: str,
+        temperature: float,
+        parser: dict,
+        character: Path,
     ) -> None:
         self.__name: str = name
+        self.__varname: str = varname
 
         self.character: str = self.__load_agent_prompt(character)
         self.chain: LLMChain = self.__setup_chain(model, temperature)
@@ -37,6 +44,10 @@ class Agent:
     @property
     def name(self):
         return self.__name
+
+    @property
+    def varname(self):
+        return self.__varname
 
     def __load_agent_prompt(self, prompt: Path) -> str:
         with open(prompt, "r") as f:
@@ -93,6 +104,10 @@ class ConversationWrapper:
         agent1: Agent,
         agent2: Agent,
         start_query: str,
+        agent1_format: str,
+        agent2_format: str,
+        agent1_template: str,
+        agent2_template: str,
         approver: Agent,
         max_turns: int = 5,
     ) -> None:
@@ -100,24 +115,40 @@ class ConversationWrapper:
         self.agent2: Agent = agent2
         self.approver: Agent = approver
 
+        self.agent1_format: str = agent1_format
+        self.agent2_format: str = agent2_format
+
+        self.agent1_template = PromptTemplate.from_template(agent1_template)
+        self.agent2_template = PromptTemplate.from_template(agent2_template)
+
         self.last_message_agent1: str = None
         self.last_message_agent2: str = start_query
 
         self.max_turns: int = max_turns
-        self.accepted = False
+        self.accepted: bool = False
         self.current_turn: int = 0
-        self.current_agent = agent1
+        self.current_agent: Agent = agent1
 
     def __iter__(self):
         return self
 
     def __next__(self):
         if self.accepted == False and self.current_turn < self.max_turns:
-            current_query = (
-                self.last_message_agent2
-                if self.current_agent == self.agent1
-                else self.last_message_agent1
-            )
+            if self.current_turn == 0 and self.current_agent == self.agent1:
+                # handle first turn. use start_query which is the last_message_agent2
+                current_query = self.last_message_agent2
+            else:
+                # handle following turns
+                if self.current_agent == self.agent1:
+                    current_query = self.agent1_template.format(
+                        feedback=self.last_message_agent2,
+                        output_format=self.agent1_format,
+                    )
+                else:
+                    current_query = self.agent2_template.format(
+                        code=self.last_message_agent1
+                    )
+            
             response = self.current_agent.answer(current_query, verbose=True)
             response = parse_response(response, self.current_agent.parser)
 
