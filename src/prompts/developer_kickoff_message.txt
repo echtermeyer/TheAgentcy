@@ -1,6 +1,5 @@
 You just received the requirements by your manager. Create the required {language} code for the following requirements:
 {requirements}
 
-Those are your formatting instructions:
-{output_format}
-Only output this, and put your generated code in the json. Do not output any additional comments.
+The output should be a markdown code snippet, starting with "```{language}" and ending with "```".
+Only output this markdown code snippet. Do not output any additional comments.

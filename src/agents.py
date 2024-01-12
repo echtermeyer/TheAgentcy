@@ -27,38 +27,62 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 class Agent:
     def __init__(
         self,
-        name: str,
-        varname: str,
-        model: str,
-        temperature: float,
-        parser: dict,
-        prompts: dict,
-        character: Path,
+        config: dict,
         root: Path,
     ) -> None:
         self.root: Path = root
 
-        self.__name: str = name
-        self.__varname: str = varname
+        self.__name: str = config["name"]
+        self.__varname: str = config["varname"]
 
-        self.character: str = self.__load_agent_character(character)
-        self.templates: dict = self.__load_prompt_templates(prompts)
-        self.chain: LLMChain = self.__setup_chain(model, temperature)
-        self.parser: dict = parser
+        self.__character: str = self.__load_agent_character()
+        self.__templates: dict = self.__load_prompt_templates(config["prompts"])
+        self.__languages: str = self.__load_agent_language()
+
+        self.__chain: LLMChain = self.__setup_chain(
+            config["model"], config["temperature"]
+        )
+        self.__parser: dict = config["parser"]
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__name
 
     @property
-    def varname(self):
+    def varname(self) -> str:
         return self.__varname
 
-    def __load_agent_character(self, prompt: Path) -> str:
-        with open(prompt, "r") as f:
-            agent_prompt = f.read()
+    @property
+    def languages(self) -> str:
+        return self.__languages
 
-        return agent_prompt
+    @property
+    def parser(self):
+        return self.__parser
+
+    def __load_agent_language(self) -> str:
+        if self.__varname == "orchestrator":
+            return
+
+        role = self.__varname.split("_")[0]
+        if role == "database":
+            return "sql"
+        elif role == "backend":
+            return "python"
+        elif role == "frontend":
+            return "html/css/javascript"
+
+    def __load_agent_character(self) -> str:
+        with open(self.root / f"src/characters/{self.__varname}.txt", "r") as f:
+            agent_character = f.read()
+
+        return agent_character
+
+    def __load_prompt_templates(self, prompt_paths: dict) -> dict:
+        return {
+            key: open(self.root / prompt_path, "r").read()
+            for key, prompt_path in prompt_paths.items()
+        }
 
     def __setup_chain(self, model: str, temperature: float) -> LLMChain:
         llm = ChatOpenAI(
@@ -68,7 +92,7 @@ class Agent:
 
         prompt = ChatPromptTemplate(
             messages=[
-                SystemMessagePromptTemplate.from_template(self.character),
+                SystemMessagePromptTemplate.from_template(self.__character),
                 MessagesPlaceholder(variable_name="chat_history"),
                 HumanMessagePromptTemplate.from_template("{message}"),
             ]
@@ -80,11 +104,8 @@ class Agent:
 
         return LLMChain(llm=llm, prompt=prompt, verbose=False, memory=memory)
 
-    def __load_prompt_templates(self, paths: dict) -> dict:
-        return {key: open(self.root / path, "r").read() for key, path in paths.items()}
-
-    def get_prompt(self, key: str) -> str:
-        return self.templates[key]
+    def get_prompt_text(self, key: str) -> str:
+        return self.__templates[key]
 
     def inject_message(self, text: str, kind: str = "human") -> None:
         if kind == "human":
@@ -98,10 +119,11 @@ class Agent:
                 "This message type is not supported. Use one of ['human', 'ai', 'system']"
             )
 
-        self.chain.memory.chat_memory.add_message(message)
+        self.__chain.memory.chat_memory.add_message(message)
 
+    # TODO: use invoke instead
     def answer(self, message: str, verbose=False):
-        answer = self.chain.run({"message": message})
+        answer = self.__chain.run({"message": message})
 
         if verbose:
             print(f"\033[34m{self.name}:\033[0m {answer}")
@@ -114,29 +136,30 @@ class ConversationWrapper:
         self,
         agent1: Agent,
         agent2: Agent,
-        start_query: str,
-        agent1_format: str,
-        agent2_format: str,
+        requirements: str,
+        kickoff: str,
         agent1_template: str,
         agent2_template: str,
-        approver: Agent,
         max_turns: int = 5,
     ) -> None:
         self.agent1: Agent = agent1
         self.agent2: Agent = agent2
-        self.approver: Agent = approver
+        self.approver: Agent = agent2
 
-        self.agent1_format: str = agent1_format
-        self.agent2_format: str = agent2_format
+        self.requirements: str = requirements
 
         self.agent1_template = PromptTemplate.from_template(agent1_template)
         self.agent2_template = PromptTemplate.from_template(agent2_template)
 
+        kickoff = PromptTemplate.from_template(kickoff)
+        kickoff = kickoff.format(language=agent1.languages, requirements=requirements)
+
         self.last_message_agent1: str = None
-        self.last_message_agent2: str = start_query
+        self.last_message_agent2: str = kickoff
 
         self.max_turns: int = max_turns
         self.accepted: bool = False
+
         self.current_turn: int = 0
         self.current_agent: Agent = agent1
 
@@ -153,10 +176,9 @@ class ConversationWrapper:
                 if self.current_agent == self.agent1:
                     current_query = self.agent1_template.format(
                         feedback=self.last_message_agent2,
-                        output_format=self.agent1_format,
+                        language=self.agent1.languages,
                     )
                 else:
-                    print(2)
                     current_query = self.agent2_template.format(
                         code=self.last_message_agent1
                     )
@@ -208,6 +230,8 @@ class HumanConversationWrapper:
     def __init__(
         self,
         agent1: Agent,
+        system_message: str,
+        conversation_task: str,
         max_turns: int = 10,
     ) -> None:
         self.agent1: Agent = agent1
@@ -219,12 +243,8 @@ class HumanConversationWrapper:
         self.__accepted = False
 
         # Inject task system message and create prompt template for human conversation
-        self.agent1.inject_message(
-            agent1.get_prompt("systemize"), kind="system"
-        )
-        self.prompt_template = PromptTemplate.from_template(
-            agent1.get_prompt("conversize")
-        )
+        self.agent1.inject_message(system_message, kind="system")
+        self.prompt_template = PromptTemplate.from_template(conversation_task)
 
     def __iter__(self):
         return self

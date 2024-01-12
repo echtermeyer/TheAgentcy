@@ -32,9 +32,8 @@ class Pipeline(QObject):
                 return terminal_input
 
         else:
-            self.to_gui_signal.emit(
-                sender, message, is_question
-            )  # send signal to gui thread
+            # send signal to gui thread
+            self.to_gui_signal.emit(sender, message, is_question)
             self._pause_execution = True
             while self._pause_execution:  # sleep until gui thread has responded
                 QThread.msleep(100)
@@ -49,20 +48,14 @@ class Pipeline(QObject):
     def __setup_agents(self) -> None:
         """Create workforce using agents.json"""
         with open(self.root / "src/setup/agents.json", "r") as file:
-            config = json.load(file)
+            configs = json.load(file)
 
-        for agent in config:
+        for config in configs:
             setattr(
                 self,
-                agent["varname"],
+                config["varname"],
                 Agent(
-                    name=agent["name"],
-                    model=agent["model"],
-                    temperature=agent["temperature"],
-                    prompts=agent["prompts"],
-                    parser=agent["parser"],
-                    varname=agent["varname"],
-                    character=self.root / f"src/characters/{agent['varname']}.txt",
+                    config=config,
                     root=self.root,
                 ),
             )
@@ -72,7 +65,15 @@ class Pipeline(QObject):
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
         if not self.fast_forward:
-            conversation_with_user = HumanConversationWrapper(self.orchestrator)
+            # Inject task system message and create prompt template for human conversation
+            system_message = self.orchestrator.get_prompt_text("systemize")
+            conversation_task = self.orchestrator.get_prompt_text("conversize")
+
+            conversation_with_user = HumanConversationWrapper(
+                self.orchestrator,
+                system_message=system_message,
+                conversation_task=conversation_task,
+            )
 
             for ai_message in conversation_with_user:
                 sender, message = ai_message
@@ -83,10 +84,8 @@ class Pipeline(QObject):
                     conversation_with_user.set_user_response(user_response)
                 else:
                     self.__transmit_to_gui(sender=sender, message=message)
-
-        # If user interacton is skipped, use a random predefined use case.
-        # The predefined use case is added to the memory of the orchestrator.
-        if self.fast_forward:
+        else:
+            # Randomly select a predefined use case and add it to the memory of the orchestrator if fast forward is enabled
             with open(self.root / "src/setup/summaries.json") as file:
                 summaries = json.load(file)
                 summary = random.choice(list(summaries.values()))
@@ -95,7 +94,7 @@ class Pipeline(QObject):
                 self.__transmit_to_gui(sender="You", message=summary)
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
-        summarization_task = self.orchestrator.get_prompt("summarize")
+        summarization_task = self.orchestrator.get_prompt_text("summarize")
         requirements = self.orchestrator.answer(summarization_task)
         requirements = extract_json(
             requirements, [("database", str), ("backend", str), ("frontend", str)]
@@ -106,68 +105,48 @@ class Pipeline(QObject):
         self.develop("frontend", requirements)
 
     def develop(self, layer, requirements):
+        # Get agents for layer
         developer, tester, documenter = (
             getattr(self, layer + "_dev"),
             getattr(self, layer + "_test"),
             getattr(self, layer + "_doc"),
-        )  # get agents for layer
+        )
 
         # 1a. Delegation: Orchestrator & Dev - Layer Dev receives tasks from Orchestrator
+        # Only for UX purposes. No actual message is sent
         message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {requirements['database']}"
         self.__transmit_to_gui(sender=self.orchestrator.name, message=message)
 
-        # TODO: Needs to be adjusted for Frontend dev (multiple formats)
         # 1b. Conversation: Dev & Tester
-        format = developer.parser["fields"][0]
+        developer_kickoff = developer.get_prompt_text("kickoff")
+        developer_followup = developer.get_prompt_text("followup")
+        tester_followup = tester.get_prompt_text("followup")
 
-        conv2_dev_kickoff = developer.get_prompt("kickoff")
-        conv2_dev_kickoff = PromptTemplate.from_template(conv2_dev_kickoff)
-
-        if layer == "database":
-            language = "SQL"
-        elif layer == "backend":
-            language = "python"
-        elif layer == "frontend":
-            language = "HTML/CSS/JavaScript"
-
-        conv2_dev_kickoff = conv2_dev_kickoff.format(
-            language=language,
-            requirements=requirements[layer],
-            output_format=output_format(format, True),
-        )
-
-        conv2_dev_followup = developer.get_prompt("followup")
-        conv2_test_followup = tester.get_prompt("followup")
-
-        conv2 = ConversationWrapper(
+        # TODO: Output format to be adjusted for Frontend dev (multiple formats)
+        
+        conversation_dev_tester = ConversationWrapper(
             agent1=developer,
             agent2=tester,
-            start_query=conv2_dev_kickoff,
-            agent1_format=output_format(format, True),
-            agent2_format=None,
-            agent1_template=conv2_dev_followup,
-            agent2_template=conv2_test_followup,
-            approver=tester,
+            requirements=requirements[layer],
+            kickoff=developer_kickoff,
+            agent1_template=developer_followup,
+            agent2_template=tester_followup,
         )
-        for ai_message in conv2:
+        for ai_message in conversation_dev_tester:
             sender, message = ai_message
             self.__transmit_to_gui(sender=sender, message=message)
 
-        final_code = conv2.last_message_agent1  # TODO: Use code
+        accepted_code = conversation_dev_tester.last_message_agent1  # TODO: Use code in containers, use traceback
 
         # 1c. Conversation: Documenter creates documentation
-        conv3_document = documenter.get_prompt("document")  
-        conv3_document = PromptTemplate.from_template(conv3_document)
-        conv3_document = conv3_document.format(
-            requirements=requirements[layer], kind=layer, code=final_code
+        documentation_task = documenter.get_prompt_text("document")
+        documentation_task = PromptTemplate.from_template(documentation_task)
+        documentation_task = documentation_task.format(
+            requirements=requirements[layer], kind=layer, code=accepted_code
         )
+        documentation = documenter.answer(documentation_task)
 
-        documentation = documenter.answer(conv3_document)
         self.__transmit_to_gui(sender=documenter.name, message=documentation)
 
-        # add documentation to orchestrators memory / chat history
+        # Add documentation to orchestrators memory / chat history
         self.orchestrator.inject_message(str(documentation), kind="human")
-
-        # TODO: Improve Conversation between Doc & Tester. Tester is bad at answering questions (change prompting).
-        # TODO: DynamicModel.validate_json often fails when validating documentation
-        # TODO: GUI code formatting

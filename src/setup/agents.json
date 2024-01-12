@@ -52,11 +52,7 @@
     "prompts": {
       "document": "src/prompts/task_document.txt"
     },
-    "parser": {
-      "type": "json",
-      "use_parser": true,
-      "fields": "[('accepted', bool), ('text', str)]"
-    }
+    "parser": null
   },
   {
     "name": "Backend Dev",
@@ -95,11 +91,7 @@
     "prompts": {
       "document": "src/prompts/task_document.txt"
     },
-    "parser": {
-      "type": "json",
-      "use_parser": true,
-      "fields": "[('accepted', bool), ('text', str)]"
-    }
+    "parser": null
   },
   {
     "name": "Frontend Dev",
@@ -138,10 +130,6 @@
     "prompts": {
       "document": "src/prompts/task_document.txt"
     },
-    "parser": {
-      "type": "json",
-      "use_parser": true,
-      "fields": "[('accepted', bool), ('text', str)]"
-    }
+    "parser": null
   }
 ]

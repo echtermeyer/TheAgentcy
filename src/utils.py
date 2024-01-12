@@ -31,22 +31,6 @@ def extract_code(input_string, language):
         return ""
 
 
-def output_format(language: str, code_only: bool) -> str:
-    """
-    Generates a markdown code snippet with a specified programming language.
-
-    :param language: The language for the code snippet (e.g., 'python', 'javascript').
-    :param code_only: A boolean to force that only the code block is outputed.
-    :return: A string containing the formatted markdown code snippet.
-    """
-    instructions = f'The output should be a markdown code snippet, starting with "```{language}" and ending with "```".'
-    if code_only:
-        force_code = "Only output this markdown code snippet. Do not output any additional comments."
-        return instructions + " " + force_code
-
-    return instructions
-
-
 def create_model(name: str, fields: List[Tuple[str, Any]]) -> type:
     annotations: Dict[str, Any] = {}
     defaults: Dict[str, Any] = {}
@@ -84,10 +68,8 @@ def parse_response(response: str, parser: dict):
     if parser["type"] == "code":
         for language in parser["fields"]:
             response = language + ":\n" + extract_code(response, language)
-            # print("code parsed")
     elif parser["type"] == "json":
         response = extract_json(response, eval(parser["fields"]))
-        # print("JSON parsed")
     else:
         raise ("Invalid type in parser. Use code or json")
     return response  # either the Code string or json
