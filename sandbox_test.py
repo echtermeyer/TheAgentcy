@@ -216,7 +216,7 @@ frontend_string = """
 
 
 backend_container = sandbox_backend.trigger_execution_pipeline(
-    backend_string, dependencies=["FastAPI", "uvicorn", "asyncpg", "pydantic"]
+    backend_string, dependencies=["FastAPI", "uvicorn", "asyncpg", "pydantic", "pandas", "numpy"]
 )
 print(backend_container.logs(tail=10).decode("utf-8"))
 
