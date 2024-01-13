@@ -1,4 +1,5 @@
 import os
+import re
 
 from pathlib import Path
 
@@ -300,16 +301,17 @@ class ChatMessageWidget(QWidget):
 
         # Text Label
         self.text_label = QLabel(self)
-        formatted_message = message.replace("\n", "<br>")  # Enables preservation of line breaks in code blocks
+        formatted_message = self.__add_formatting(sender, message)
         self.text_label.setText(f"<b>{sender}</b>: {formatted_message}")
         self.text_label.setWordWrap(True)
+        print("4", message)
         text_background_color = "#C8CFE3" if sender == "You" else "#E2DED4"
         self.text_label.setStyleSheet(
             f"""
-            background-color: {text_background_color};
-            border-radius: 10px;
-            padding: 15px;
-        """
+                background-color: {text_background_color};
+                border-radius: 10px;
+                padding: 15px;
+            """ 
         )
 
         # Layout
@@ -347,11 +349,52 @@ class ChatMessageWidget(QWidget):
         }
         return d[name]
 
+    def __add_formatting(self, sender, message):
+        role = sender[-3:]
+        layer = sender[:-4]
+
+        if role == "Dev":
+            # To display code properly the html tags need to be replaced with their html entity equivalents
+            message = message.replace(" ", "&nbsp;")
+            message = message.replace("<", "&lt;").replace(">", "&gt;") 
+
+            # Define basic keywords that should be highlighted
+            keywords = {
+                'Backend': ['def', 'return', 'class', 'None', 'True', 'False', 'self', 'init', 'lambda', 'global', 'nonlocal', 'yield', 'with', 'as', 'assert', 'del', 'from', 'global', 
+                            'nonlocal', 'pass', 'raise', 'yield', 'if', 'else', 'elif', 'for', 'while', 'break', 'continue', 'try', 'except', 'finally', 'in', 'is', 'and', 'or', 'not',
+                            'import', 'from', 'as', 'try', 'except', 'finally', 'with', 'as', 'exec', 'print', 'int', 'float', 'str', 'list', 'dict', 'tuple', 'set', 'bool', 'bytes', 'object'],
+                'Database': ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'HAVING', 'DISTINCT', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 
+                             'ALTER TABLE', 'DROP TABLE', 'CREATE TABLE', 'TRUNCATE TABLE', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN', 'CROSS JOIN', 'NATURAL JOIN', 
+                             'UNION', 'UNION ALL', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS NULL', 'IS NOT NULL', 'EXISTS'],
+                'Frontend': ['<!DOCTYPE html>', '<html>', '</html>', '<body>', '</body>', '<script>', '</script>', '<style>', '</style>', '<link>', '<meta>', '<head>', '</head>', 
+                             '<title>', '</title>', '<header>', '</header>', '<footer>', '</footer>', '<main>', '</main>', '<div>', '</div>', '<span>', '</span>', '<p>', '</p>', 
+                             '<a>', '</a>', '<img>', '<ul>', '<ol>', '<li>', '<section>', '</section>', '<button>', '</button>', '<input>', '<label>', '<form>', '</form>', 
+                             '<select>', '<option>', '<textarea>', '<table>', '<tr>', '<td>', '<th>', '<thead>', '<tbody>', '<tfoot>']
+            }
+
+            # Apply keyword highlighting
+            for kw in keywords[layer]:
+                message = re.sub(r'\b' + re.escape(kw) + r'\b', f'<span style="color: #4654B3; font-weight: bold;">{kw}</span>', message)
+
+            # Comment highlighting
+            if layer == 'Frontend':
+                message = re.sub(r'(#.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
+            elif layer == 'Backend':
+                message = re.sub(r'(--.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
+
+        # Add line breaks
+        if role == "Doc" or role == "Dev":
+            message = "<br><br>" + message.replace("\n", "<br>")
+
+        return message
+
+
+
 
 class TypingAnimationWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.label = QLabel("is typing...")
+        self.label = QLabel("")
         layout = QHBoxLayout()
         layout.addWidget(self.label)
         self.setLayout(layout)

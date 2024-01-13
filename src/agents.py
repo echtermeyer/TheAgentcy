@@ -137,14 +137,15 @@ class ConversationWrapper:
         agent1: Agent,
         agent2: Agent,
         requirements: str,
-        kickoff: str,
         agent1_template: str,
         agent2_template: str,
+        kickoff: str,
+        docker_sandbox,
+        docker_dependencies,
         max_turns: int = 5,
     ) -> None:
         self.agent1: Agent = agent1
         self.agent2: Agent = agent2
-        self.approver: Agent = agent2
 
         self.requirements: str = requirements
 
@@ -153,6 +154,9 @@ class ConversationWrapper:
 
         kickoff = PromptTemplate.from_template(kickoff)
         kickoff = kickoff.format(language=agent1.languages, requirements=requirements)
+
+        self.docker_sandbox = docker_sandbox
+        self.docker_dependencies = docker_dependencies
 
         self.last_message_agent1: str = None
         self.last_message_agent2: str = kickoff
@@ -179,8 +183,32 @@ class ConversationWrapper:
                         language=self.agent1.languages,
                     )
                 else:
+                    # run code in docker
+                    if self.docker_sandbox is not None:
+                        print("sandbox", self.docker_sandbox)
+                        print("dependencies", self.docker_dependencies)
+                        docker_container = self.docker_sandbox.trigger_execution_pipeline(
+                            self.last_message_agent1,
+                            dependencies=self.docker_dependencies
+                            )
+                        
+                        docker_logs = """
+                        These are the last few log statements 
+                        that one gets when running the code 
+                        in a dedicated docker container:
+                        """ + docker_container.logs(tail=10).decode("utf-8")
+                        print("=====docker logs=====\n", docker_logs)
+                        print(docker_logs=="")
+                        print(type(docker_logs))
+                        print(docker_logs.__len__())
+                        print(type(docker_container))
+                        print(docker_logs.strip() == "")
+                    else:
+                        docker_logs = ""
+
                     current_query = self.agent2_template.format(
-                        code=self.last_message_agent1
+                        code=self.last_message_agent1,
+                        docker_logs=docker_logs
                     )
 
             response = self.current_agent.answer(current_query, verbose=True)
@@ -189,21 +217,13 @@ class ConversationWrapper:
             # Can be dict [tester or documenter] or code [dev]
             message = response["text"] if type(response) == dict else response
 
-            self.accepted = (
-                response["accepted"]
-                if type(response) == dict and self.current_agent == self.approver
-                else self.accepted
-            )
-            self.last_message_agent1 = (
-                message
-                if self.current_agent == self.agent1
-                else self.last_message_agent1
-            )
-            self.last_message_agent2 = (
-                message
-                if self.current_agent == self.agent2
-                else self.last_message_agent2
-            )
+            if type(response) == dict and self.current_agent == self.agent2:
+                self.accepted = response["accepted"]
+
+            if self.current_agent == self.agent1:
+                self.last_message_agent1 = message
+            else:
+                self.last_message_agent2 = message
 
             # save now before updating self.current_agent
             return_values = (
@@ -211,11 +231,9 @@ class ConversationWrapper:
                 message,
             )
 
-            self.current_turn = (
-                self.current_turn + 1
-                if self.current_agent == self.agent2
-                else self.current_turn
-            )
+            if self.current_agent == self.agent2:
+                self.current_turn += 1
+  
             self.current_agent = (
                 self.agent2 if self.current_agent == self.agent1 else self.agent1
             )
@@ -254,7 +272,7 @@ class HumanConversationWrapper:
             self.current_turn += 1
             return (
                 self.agent1.name,
-                f"Hello, my name is {self.agent1.name}. Me and my team are here to build custom web-applications based on your specific requirements. What project can we assist you with today?",
+                f"Hello, my name is Santiago. Me and my team are here to build custom web-applications based on your specific requirements. What project can we assist you with today?",
             )
 
         elif self.__accepted == False and self.current_turn < self.max_turns:

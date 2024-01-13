@@ -158,7 +158,7 @@ class FrontendSandbox(Sandbox):
 
         return BytesIO(dockerfile_str.encode('utf-8'))
 
-    def trigger_execution_pipeline(self, fulltext_html_code: str) -> docker.models.containers.Container:
+    def trigger_execution_pipeline(self, fulltext_html_code: str, dependencies=None) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given HTML code.
 
@@ -242,7 +242,7 @@ class DatabaseSandbox(Sandbox):
 
         return BytesIO(dockerfile_str.encode('utf-8'))
 
-    def trigger_execution_pipeline(self) -> docker.models.containers.Container:
+    def trigger_execution_pipeline(self, fulltext_sql_code=None, dependencies=None) -> docker.models.containers.Container:
         """
         Triggers the execution pipeline for the given SQL code.
 

@@ -8,10 +8,13 @@ from PySide6.QtCore import QObject, Signal, QThread, QCoreApplication
 
 from src.utils import *
 from src.agents import Agent, HumanConversationWrapper, ConversationWrapper
+from src.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 
 
 class Pipeline(QObject):
     to_gui_signal = Signal(str, str, bool)  # For communication with GUI thread
+    docker_status_signal = Signal()
+
 
     def __init__(self, command_line_args):
         super().__init__()
@@ -24,13 +27,13 @@ class Pipeline(QObject):
         self.disable_gui = command_line_args.disable_gui
         self.__setup_agents()
 
-    def __transmit_to_gui(self, sender, message, is_question=False):
+    def __transmit_message_to_gui(self, sender, message, is_question=False):
         if self.disable_gui:
             print(f"\033[34m{sender}:\033[0m {message}")
             if is_question:
                 terminal_input = input("\033[34mYour answer: \033[0m ")
                 return terminal_input
-
+            
         else:
             # send signal to gui thread
             self.to_gui_signal.emit(sender, message, is_question)
@@ -40,6 +43,10 @@ class Pipeline(QObject):
                 QCoreApplication.processEvents()  # but check for incoming signals
 
             return self._input
+        
+    def __transmit_docker_status_to_gui(self, status, container):
+        pass
+
 
     def receive_from_gui(self, input):
         self._input = input
@@ -78,12 +85,12 @@ class Pipeline(QObject):
             for ai_message in conversation_with_user:
                 sender, message = ai_message
                 if not conversation_with_user.is_accepted():
-                    user_response = self.__transmit_to_gui(
+                    user_response = self.__transmit_message_to_gui(
                         sender=sender, message=message, is_question=True
                     )
                     conversation_with_user.set_user_response(user_response)
                 else:
-                    self.__transmit_to_gui(sender=sender, message=message)
+                    self.__transmit_message_to_gui(sender=sender, message=message)
         else:
             # Randomly select a predefined use case and add it to the memory of the orchestrator if fast forward is enabled
             with open(self.root / "src/setup/summaries.json") as file:
@@ -91,7 +98,7 @@ class Pipeline(QObject):
                 summary = random.choice(list(summaries.values()))
 
                 self.orchestrator.inject_message(summary, kind="ai")
-                self.__transmit_to_gui(sender="You", message=summary)
+                self.__transmit_message_to_gui(sender="You", message=summary)
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
         summarization_task = self.orchestrator.get_prompt_text("summarize")
@@ -111,11 +118,13 @@ class Pipeline(QObject):
             getattr(self, layer + "_test"),
             getattr(self, layer + "_doc"),
         )
+        # Start corresponding docker container
+        docker_sandbox = DatabaseSandbox() if layer == "database" else PythonSandbox() if layer == "backend" else FrontendSandbox()
 
         # 1a. Delegation: Orchestrator & Dev - Layer Dev receives tasks from Orchestrator
         # Only for UX purposes. No actual message is sent
         message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {requirements[layer]}"
-        self.__transmit_to_gui(sender=self.orchestrator.name, message=message)
+        self.__transmit_message_to_gui(sender=self.orchestrator.name, message=message)
 
         # 1b. Conversation: Dev & Tester
         developer_kickoff = developer.get_prompt_text("kickoff")
@@ -123,18 +132,21 @@ class Pipeline(QObject):
         tester_followup = tester.get_prompt_text("followup")
 
         # TODO: Output format to be adjusted for Frontend dev (multiple formats)
-        
+        sandbox = docker_sandbox if layer != "database" else None
+        dependencies= ["FastAPI", "uvicorn", "asyncpg", "pydantic", "pandas", "numpy"] if layer == "backend" else None
         conversation_dev_tester = ConversationWrapper(
             agent1=developer,
             agent2=tester,
             requirements=requirements[layer],
-            kickoff=developer_kickoff,
             agent1_template=developer_followup,
             agent2_template=tester_followup,
+            kickoff=developer_kickoff,
+            docker_sandbox=sandbox,
+            docker_dependencies=dependencies,
         )
         for ai_message in conversation_dev_tester:
             sender, message = ai_message
-            self.__transmit_to_gui(sender=sender, message=message)
+            self.__transmit_message_to_gui(sender=sender, message=message)
 
         accepted_code = conversation_dev_tester.last_message_agent1  # TODO: Use code in containers, use traceback
 
@@ -146,7 +158,7 @@ class Pipeline(QObject):
         )
         documentation = documenter.answer(documentation_task)
 
-        self.__transmit_to_gui(sender=documenter.name, message=documentation)
+        self.__transmit_message_to_gui(sender=documenter.name, message=documentation)
 
         # Add documentation to orchestrators memory / chat history
         self.orchestrator.inject_message(str(documentation), kind="human")
