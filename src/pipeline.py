@@ -114,7 +114,7 @@ class Pipeline(QObject):
 
         # 1a. Delegation: Orchestrator & Dev - Layer Dev receives tasks from Orchestrator
         # Only for UX purposes. No actual message is sent
-        message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {requirements['database']}"
+        message = f"<span style='color: blue;'>@{developer.name}</span>, please develop the {layer} for the application. Here are the requirements: {requirements[layer]}"
         self.__transmit_to_gui(sender=self.orchestrator.name, message=message)
 
         # 1b. Conversation: Dev & Tester

@@ -44,7 +44,7 @@ def create_model(name: str, fields: List[Tuple[str, Any]]) -> type:
 
 def extract_json(input_str: str, fields: List[Tuple[str, Any]]) -> dict:
     # Create a dynamic model
-    print(f"INPUT_STR: {input_str}")
+    # print(f"INPUT_STR: {input_str}")
     DynamicModel = create_model("DynamicModel", fields)
 
     # Extract JSON string from the input
@@ -67,7 +67,7 @@ def parse_response(response: str, parser: dict):
         return response
     if parser["type"] == "code":
         for language in parser["fields"]:
-            response = language + ":\n" + extract_code(response, language)
+            response = extract_code(response, language)
     elif parser["type"] == "json":
         response = extract_json(response, eval(parser["fields"]))
     else:
