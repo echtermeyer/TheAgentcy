@@ -7,7 +7,8 @@
     "prompts": {
       "systemize": "src/prompts/requirements_system_message.txt",
       "summarize": "src/prompts/requirements_task_summaries.txt",
-      "conversize": "src/prompts/requirements_user_conversation.txt"
+      "conversize": "src/prompts/requirements_user_conversation.txt",
+      "finalize": "src/prompts/orchestrator_final_message.txt"
     },
     "parser": {
       "type": "json",

@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QLabel,
     QLineEdit,
-    QMessageBox,
 )
 
 from src.pipeline import Pipeline
@@ -33,12 +32,9 @@ class Gui(QMainWindow):
         self.pipeline_thread = QThread()
         self.pipeline.moveToThread(self.pipeline_thread)
 
-        self.pipeline.to_gui_signal.connect(
-            self.__on_message_received, Qt.QueuedConnection
-        )  # If the pipeline thread emits a signal, call  gui.__on_message_received()
-        self.to_pipeline_signal.connect(
-            self.pipeline.receive_from_gui, Qt.QueuedConnection
-        )  # If the gui thread emits a signal, call pipeline.receive_from_gui()
+        self.to_pipeline_signal.connect(self.pipeline.receive_from_gui, Qt.QueuedConnection)  # If the gui thread emits a signal, call pipeline.receive_from_gui()
+        self.pipeline.message_signal.connect(self.__on_message_received, Qt.QueuedConnection)  # If the pipeline thread emits a signal, call  gui.__on_message_received()
+        self.pipeline.animation_signal.connect(self.__start_animation, Qt.QueuedConnection)  # If the pipeline thread emits a signal, call  gui.__start_animation()
 
         self.pipeline_thread.started.connect(
             self.pipeline.start
@@ -48,7 +44,7 @@ class Gui(QMainWindow):
     def __setup_gui_layout(self):
         # Set window properties
         self.setWindowTitle("Mutiagent Development Suite")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 800, 800)
 
         # Set the window icon
         icon_path = (
@@ -87,7 +83,7 @@ class Gui(QMainWindow):
         self.typing_animation_widget = TypingAnimationWidget()
         self.typing_animation_timer = QTimer(self)
         self.typing_animation_timer.timeout.connect(self.__update_typing_animation)
-        self.is_typing_animation_running = False
+        self.is_animation_running = False
         self.dots = 0
 
         # Set layout
@@ -175,11 +171,22 @@ class Gui(QMainWindow):
         self.send_button.setEnabled(enable)
 
     def __on_message_received(self, sender, message, is_question):
-        self.__start_typing_animation(sender)
+        if self.is_animation_running:
+            self.__stop_animation()
+
+        message_widget = ChatMessageWidget(sender, message)
+        self.scroll_layout.insertWidget(-1, message_widget)
         QTimer.singleShot(
-            2000,
-            lambda: self.__add_message_to_scroll_area(sender, message, is_question),
+            100,
+            lambda: self.scroll_area.verticalScrollBar().setValue(
+                self.scroll_area.verticalScrollBar().maximum()
+            ),
         )
+
+        if is_question:
+            self.__enable_input(True)
+        else:
+            self.to_pipeline_signal.emit(None)  # Continue pipeline execution
 
     def __on_send_clicked(self):
         user_input = self.text_input.text()
@@ -197,23 +204,6 @@ class Gui(QMainWindow):
 
         self.to_pipeline_signal.emit(user_input)
 
-    def __add_message_to_scroll_area(self, sender, message, is_question=False):
-        self.__stop_typing_animation()
-
-        message_widget = ChatMessageWidget(sender, message)
-        self.scroll_layout.insertWidget(-1, message_widget)
-        QTimer.singleShot(
-            100,
-            lambda: self.scroll_area.verticalScrollBar().setValue(
-                self.scroll_area.verticalScrollBar().maximum()
-            ),
-        )
-
-        if is_question:
-            self.__enable_input(True)
-        else:
-            self.to_pipeline_signal.emit(None)  # Continue pipeline execution
-
     def eventFilter(self, obj, event):
         # adds keyboard control
         if (
@@ -226,10 +216,10 @@ class Gui(QMainWindow):
             return True
         return super().eventFilter(obj, event)
 
-    def __start_typing_animation(self, sender):
-        if not self.is_typing_animation_running:
-            self.is_typing_animation_running = True
-            self.typing_sender = sender
+    def __start_animation(self, text):
+        if not self.is_animation_running:
+            self.is_animation_running = True
+            self.animation_text = text
             self.dots = 0
             self.scroll_layout.insertWidget(
                 -1, self.typing_animation_widget
@@ -242,10 +232,10 @@ class Gui(QMainWindow):
             )
             self.typing_animation_timer.start(300)
 
-    def __stop_typing_animation(self):
-        if self.is_typing_animation_running:
+    def __stop_animation(self):
+        if self.is_animation_running:
             self.typing_animation_timer.stop()
-            self.is_typing_animation_running = False
+            self.is_animation_running = False
             self.scroll_layout.removeWidget(self.typing_animation_widget)
             self.typing_animation_widget.setParent(None)  # Remove widget from layout
             QTimer.singleShot(
@@ -257,7 +247,7 @@ class Gui(QMainWindow):
 
     def __update_typing_animation(self):
         self.dots += 1
-        self.typing_animation_widget.update_text(self.typing_sender, self.dots)
+        self.typing_animation_widget.update_text(self.animation_text, self.dots)
 
 
 class ChatMessageWidget(QWidget):
@@ -304,7 +294,6 @@ class ChatMessageWidget(QWidget):
         formatted_message = self.__add_formatting(sender, message)
         self.text_label.setText(f"<b>{sender}</b>: {formatted_message}")
         self.text_label.setWordWrap(True)
-        print("4", message)
         text_background_color = "#C8CFE3" if sender == "You" else "#E2DED4"
         self.text_label.setStyleSheet(
             f"""
@@ -353,19 +342,41 @@ class ChatMessageWidget(QWidget):
         role = sender[-3:]
         layer = sender[:-4]
 
+        # Add code formatting
         if role == "Dev":
+            
+            # Add line breaks if line > max_line_length
+            max_line_length = 120
+            lines = message.split('\n')
+            for i, line in enumerate(lines):
+                if len(line) > max_line_length:
+                    new_line = ''
+                    while len(line) > max_line_length:
+                        new_line += line[:max_line_length] + '\n'
+                        line = line[max_line_length:]
+                    new_line += line
+                    lines[i] = new_line
+            message = '\n'.join(lines)
+
             # To display code properly the html tags need to be replaced with their html entity equivalents
             message = message.replace(" ", "&nbsp;")
             message = message.replace("<", "&lt;").replace(">", "&gt;") 
+
+            # Comment highlighting
+            if layer == 'Backend':
+                message = re.sub(r'(#.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
+            elif layer == 'Database':
+                message = re.sub(r'(--.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
+            elif layer == 'Frontend':
+                message = re.sub(r'(//.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
 
             # Define basic keywords that should be highlighted
             keywords = {
                 'Backend': ['def', 'return', 'class', 'None', 'True', 'False', 'self', 'init', 'lambda', 'global', 'nonlocal', 'yield', 'with', 'as', 'assert', 'del', 'from', 'global', 
                             'nonlocal', 'pass', 'raise', 'yield', 'if', 'else', 'elif', 'for', 'while', 'break', 'continue', 'try', 'except', 'finally', 'in', 'is', 'and', 'or', 'not',
                             'import', 'from', 'as', 'try', 'except', 'finally', 'with', 'as', 'exec', 'print', 'int', 'float', 'str', 'list', 'dict', 'tuple', 'set', 'bool', 'bytes', 'object'],
-                'Database': ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET', 'HAVING', 'DISTINCT', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 
-                             'ALTER TABLE', 'DROP TABLE', 'CREATE TABLE', 'TRUNCATE TABLE', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'FULL JOIN', 'CROSS JOIN', 'NATURAL JOIN', 
-                             'UNION', 'UNION ALL', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN', 'IS NULL', 'IS NOT NULL', 'EXISTS'],
+                'Database': ['SELECT', 'FROM', 'WHERE', 'GROUP&nbsp;BY', 'ORDER&nbsp;BY', 'LIMIT', 'OFFSET', 'HAVING', 'DISTINCT', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 
+                             'ALTER&nbsp;TABLE', 'DROP&nbsp;TABLE', 'CREATE&nbsp;TABLE', 'CREATE&nbsp;INDEX', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'IS&nbsp;NULL', 'IS&nbsp;NOT&nbsp;NULL'],
                 'Frontend': ['<!DOCTYPE html>', '<html>', '</html>', '<body>', '</body>', '<script>', '</script>', '<style>', '</style>', '<link>', '<meta>', '<head>', '</head>', 
                              '<title>', '</title>', '<header>', '</header>', '<footer>', '</footer>', '<main>', '</main>', '<div>', '</div>', '<span>', '</span>', '<p>', '</p>', 
                              '<a>', '</a>', '<img>', '<ul>', '<ol>', '<li>', '<section>', '</section>', '<button>', '</button>', '<input>', '<label>', '<form>', '</form>', 
@@ -376,19 +387,11 @@ class ChatMessageWidget(QWidget):
             for kw in keywords[layer]:
                 message = re.sub(r'\b' + re.escape(kw) + r'\b', f'<span style="color: #4654B3; font-weight: bold;">{kw}</span>', message)
 
-            # Comment highlighting
-            if layer == 'Frontend':
-                message = re.sub(r'(#.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
-            elif layer == 'Backend':
-                message = re.sub(r'(--.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
-
         # Add line breaks
         if role == "Doc" or role == "Dev":
             message = "<br><br>" + message.replace("\n", "<br>")
 
         return message
-
-
 
 
 class TypingAnimationWidget(QWidget):
@@ -399,5 +402,5 @@ class TypingAnimationWidget(QWidget):
         layout.addWidget(self.label)
         self.setLayout(layout)
 
-    def update_text(self, sender, dots):
-        self.label.setText(f"{sender} is typing{'.' * (dots % 4)}")
+    def update_text(self, text, dots):
+        self.label.setText(f'<span style="color: gray">{text}{'.' * (dots % 4)}</span>')
