@@ -403,4 +403,4 @@ class TypingAnimationWidget(QWidget):
         self.setLayout(layout)
 
     def update_text(self, text, dots):
-        self.label.setText(f'<span style="color: gray">{text}{'.' * (dots % 4)}</span>')
+        self.label.setText(f'<span style="color: gray">{text}{"." * (dots % 4)}</span>')
