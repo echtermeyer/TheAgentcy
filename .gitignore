@@ -1,5 +1,6 @@
 .vscode/
-.env
+
+projects/
 
 # Stuff that I need to replace poetry
 .my_venv/
@@ -127,7 +128,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/

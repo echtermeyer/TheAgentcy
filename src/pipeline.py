@@ -1,4 +1,5 @@
 import json
+import string
 import random
 
 from pathlib import Path
@@ -8,12 +9,12 @@ from PySide6.QtCore import QObject, Signal, QThread, QCoreApplication
 
 from src.utils import *
 from src.agents import Agent, HumanConversationWrapper
-from src.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
+from src.sandbox.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 
 
 class Pipeline(QObject):
     message_signal = Signal(str, str, bool)  # For communication with GUI thread
-    animation_signal = Signal(str) # layer, status, on/off
+    animation_signal = Signal(str)  # layer, status, on/off
 
     def __init__(self, command_line_args):
         super().__init__()
@@ -41,8 +42,8 @@ class Pipeline(QObject):
                 QCoreApplication.processEvents()  # but check for incoming signals
 
             return self._input
-        
-    def __transmit_animation_signal(self, text):  
+
+    def __transmit_animation_signal(self, text):
         if self.disable_gui:
             print(f"\033[34mstatus\033[0m")
         else:
@@ -66,6 +67,10 @@ class Pipeline(QObject):
                     root=self.root,
                 ),
             )
+
+    def __create_project_name(self, title: str = "Webapp") -> str:
+        # Append 4 random chars at the end of the title, seperated by _
+        return title + "_" + "".join(random.choices(string.ascii_lowercase, k=4))
 
     def start(self) -> None:
         """Start developing process"""
@@ -91,14 +96,18 @@ class Pipeline(QObject):
                     conversation_with_user.set_user_response(user_response)
                 else:
                     self.__transmit_message_signal(sender=sender, message=message)
+
+            self.title = self.__create_project_name() # TODO: Use real project title
         else:
             # Randomly select a predefined use case and add it to the memory of the orchestrator if fast forward is enabled
             with open(self.root / "src/setup/summaries.json") as file:
                 summaries = json.load(file)
-                summary = random.choice(list(summaries.values()))
 
-                self.orchestrator.inject_message(summary, kind="ai")
-                self.__transmit_message_signal(sender="You", message=summary)
+            summary_key = random.choice(list(summaries.keys()))
+            self.title = self.__create_project_name(summary_key)
+
+            self.orchestrator.inject_message(summaries[summary_key], kind="ai")
+            self.__transmit_message_signal(sender="You", message=summaries[summary_key])
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
         summarization_task = self.orchestrator.get_prompt_text("summarize")
@@ -114,7 +123,9 @@ class Pipeline(QObject):
         self.__transmit_animation_signal(f"{self.orchestrator.name} is typing")
         finale_prompt = self.orchestrator.get_prompt_text("finalize")
         final_message = self.orchestrator.answer(finale_prompt)
-        user_response = self.__transmit_message_signal(sender=self.orchestrator.name, message=final_message)
+        user_response = self.__transmit_message_signal(
+            sender=self.orchestrator.name, message=final_message
+        )
 
     def develop(self, layer, requirements):
         # Get agents for layer
@@ -125,7 +136,13 @@ class Pipeline(QObject):
         )
         # Start corresponding docker container
         self.__transmit_animation_signal(f"Building docker container for {layer}")
-        docker_sandbox = DatabaseSandbox() if layer == "database" else PythonSandbox() if layer == "backend" else FrontendSandbox()
+        docker_sandbox = (
+            DatabaseSandbox(self.title)
+            if layer == "database"
+            else PythonSandbox(self.title)
+            if layer == "backend"
+            else FrontendSandbox(self.title)
+        )
 
         # 1a. Delegation: Orchestrator & Dev - Layer Dev receives tasks from Orchestrator
         # Only for UX purposes. No actual message is sent
@@ -139,31 +156,47 @@ class Pipeline(QObject):
 
         for turn in range(5):
             if turn == 0:
-                dev_query = developer_kickoff.format(language=developer.languages, requirements=requirements)
+                dev_query = developer_kickoff.format(
+                    language=developer.languages, requirements=requirements
+                )
             else:
-                dev_query = developer_followup.format(feedback=tester_message, language=developer.languages)
+                dev_query = developer_followup.format(
+                    feedback=tester_message, language=developer.languages
+                )
 
             # Send query to dev agent
             self.__transmit_animation_signal(f"{developer.name} is typing")
             dev_code = developer.answer(dev_query, verbose=True)
             dev_code = parse_response(dev_code, developer.parser)
             self.__transmit_message_signal(sender=developer.name, message=dev_code)
-            
+
             # Execute code in docker container
             docker_logs = ""
-            if layer != "database": 
+            if layer != "database":
                 self.__transmit_animation_signal(f"running code in {layer} container")
-                dependencies= ["FastAPI", "uvicorn", "asyncpg", "pydantic", "pandas", "numpy"] if layer == "backend" else None
-                docker_container = docker_sandbox.trigger_execution_pipeline(dev_code, dependencies)
+                dependencies = (
+                    ["FastAPI", "uvicorn", "asyncpg", "pydantic", "pandas", "numpy"]
+                    if layer == "backend"
+                    else None
+                )
+                docker_container = docker_sandbox.trigger_execution_pipeline(
+                    dev_code, dependencies
+                )
                 prefix = "These are the last few log statements that one gets when running the code in a dedicated docker container:\n"
                 if repr(docker_logs) != "''":
-                    docker_logs = prefix + docker_container.logs(tail=10).decode("utf-8")
+                    docker_logs = prefix + docker_container.logs(tail=10).decode(
+                        "utf-8"
+                    )
 
             # Send message, code and docker logs to tester agent
-            tester_query = tester_followup.format(code=dev_code, docker_logs=docker_logs)
+            tester_query = tester_followup.format(
+                code=dev_code, docker_logs=docker_logs
+            )
             self.__transmit_animation_signal(f"{tester.name} is typing")
             tester_message = tester.answer(tester_query, verbose=True)
-            accepted, tester_message = parse_response(tester_message, tester.parser).values()
+            accepted, tester_message = parse_response(
+                tester_message, tester.parser
+            ).values()
             self.__transmit_message_signal(sender=tester.name, message=tester_message)
 
             if accepted:

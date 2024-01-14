@@ -1,5 +1,5 @@
-from src.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 from src.logger import Logger
+from src.sandbox.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 
 
 sandbox_database = DatabaseSandbox()

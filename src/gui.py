@@ -32,9 +32,15 @@ class Gui(QMainWindow):
         self.pipeline_thread = QThread()
         self.pipeline.moveToThread(self.pipeline_thread)
 
-        self.to_pipeline_signal.connect(self.pipeline.receive_from_gui, Qt.QueuedConnection)  # If the gui thread emits a signal, call pipeline.receive_from_gui()
-        self.pipeline.message_signal.connect(self.__on_message_received, Qt.QueuedConnection)  # If the pipeline thread emits a signal, call  gui.__on_message_received()
-        self.pipeline.animation_signal.connect(self.__start_animation, Qt.QueuedConnection)  # If the pipeline thread emits a signal, call  gui.__start_animation()
+        self.to_pipeline_signal.connect(
+            self.pipeline.receive_from_gui, Qt.QueuedConnection
+        )  # If the gui thread emits a signal, call pipeline.receive_from_gui()
+        self.pipeline.message_signal.connect(
+            self.__on_message_received, Qt.QueuedConnection
+        )  # If the pipeline thread emits a signal, call  gui.__on_message_received()
+        self.pipeline.animation_signal.connect(
+            self.__start_animation, Qt.QueuedConnection
+        )  # If the pipeline thread emits a signal, call  gui.__start_animation()
 
         self.pipeline_thread.started.connect(
             self.pipeline.start
@@ -48,7 +54,7 @@ class Gui(QMainWindow):
 
         # Set the window icon
         icon_path = (
-            Path(__file__).parent / "media" / "app_logo.png"
+            Path(__file__).parent / "setup/media" / "app_logo.png"
         )  # Replace with the path to your icon file
         self.setWindowIcon(QIcon(str(icon_path)))
 
@@ -256,7 +262,10 @@ class ChatMessageWidget(QWidget):
 
         # Construct the path to the image
         image_path = str(
-            Path(__file__).parent / "media" / "headshots" / f"{sender.capitalize()}.jpg"
+            Path(__file__).parent
+            / "setup/media"
+            / "headshots"
+            / f"{sender.capitalize()}.jpg"
         )
 
         # For debugging until final decision on bot names is made
@@ -264,7 +273,7 @@ class ChatMessageWidget(QWidget):
             new_sender = self.__translate_name(sender)
             image_path = str(
                 Path(__file__).parent
-                / "media"
+                / "setup/media"
                 / "headshots"
                 / f"{new_sender.capitalize()}.jpg"
             )
@@ -300,7 +309,7 @@ class ChatMessageWidget(QWidget):
                 background-color: {text_background_color};
                 border-radius: 10px;
                 padding: 15px;
-            """ 
+            """
         )
 
         # Layout
@@ -344,48 +353,196 @@ class ChatMessageWidget(QWidget):
 
         # Add code formatting
         if role == "Dev":
-            
             # Add line breaks if line > max_line_length
             max_line_length = 120
-            lines = message.split('\n')
+            lines = message.split("\n")
             for i, line in enumerate(lines):
                 if len(line) > max_line_length:
-                    new_line = ''
+                    new_line = ""
                     while len(line) > max_line_length:
-                        new_line += line[:max_line_length] + '\n'
+                        new_line += line[:max_line_length] + "\n"
                         line = line[max_line_length:]
                     new_line += line
                     lines[i] = new_line
-            message = '\n'.join(lines)
+            message = "\n".join(lines)
 
             # To display code properly the html tags need to be replaced with their html entity equivalents
             message = message.replace(" ", "&nbsp;")
-            message = message.replace("<", "&lt;").replace(">", "&gt;") 
+            message = message.replace("<", "&lt;").replace(">", "&gt;")
 
             # Comment highlighting
-            if layer == 'Backend':
-                message = re.sub(r'(#.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
-            elif layer == 'Database':
-                message = re.sub(r'(--.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
-            elif layer == 'Frontend':
-                message = re.sub(r'(//.*?$)', r'<span style="color: gray; font-style: italic;">\1</span>', message, flags=re.MULTILINE)
+            if layer == "Backend":
+                message = re.sub(
+                    r"(#.*?$)",
+                    r'<span style="color: gray; font-style: italic;">\1</span>',
+                    message,
+                    flags=re.MULTILINE,
+                )
+            elif layer == "Database":
+                message = re.sub(
+                    r"(--.*?$)",
+                    r'<span style="color: gray; font-style: italic;">\1</span>',
+                    message,
+                    flags=re.MULTILINE,
+                )
+            elif layer == "Frontend":
+                message = re.sub(
+                    r"(//.*?$)",
+                    r'<span style="color: gray; font-style: italic;">\1</span>',
+                    message,
+                    flags=re.MULTILINE,
+                )
 
             # Define basic keywords that should be highlighted
             keywords = {
-                'Backend': ['def', 'return', 'class', 'None', 'True', 'False', 'self', 'init', 'lambda', 'global', 'nonlocal', 'yield', 'with', 'as', 'assert', 'del', 'from', 'global', 
-                            'nonlocal', 'pass', 'raise', 'yield', 'if', 'else', 'elif', 'for', 'while', 'break', 'continue', 'try', 'except', 'finally', 'in', 'is', 'and', 'or', 'not',
-                            'import', 'from', 'as', 'try', 'except', 'finally', 'with', 'as', 'exec', 'print', 'int', 'float', 'str', 'list', 'dict', 'tuple', 'set', 'bool', 'bytes', 'object'],
-                'Database': ['SELECT', 'FROM', 'WHERE', 'GROUP&nbsp;BY', 'ORDER&nbsp;BY', 'LIMIT', 'OFFSET', 'HAVING', 'DISTINCT', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 
-                             'ALTER&nbsp;TABLE', 'DROP&nbsp;TABLE', 'CREATE&nbsp;TABLE', 'CREATE&nbsp;INDEX', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'IS&nbsp;NULL', 'IS&nbsp;NOT&nbsp;NULL'],
-                'Frontend': ['<!DOCTYPE html>', '<html>', '</html>', '<body>', '</body>', '<script>', '</script>', '<style>', '</style>', '<link>', '<meta>', '<head>', '</head>', 
-                             '<title>', '</title>', '<header>', '</header>', '<footer>', '</footer>', '<main>', '</main>', '<div>', '</div>', '<span>', '</span>', '<p>', '</p>', 
-                             '<a>', '</a>', '<img>', '<ul>', '<ol>', '<li>', '<section>', '</section>', '<button>', '</button>', '<input>', '<label>', '<form>', '</form>', 
-                             '<select>', '<option>', '<textarea>', '<table>', '<tr>', '<td>', '<th>', '<thead>', '<tbody>', '<tfoot>']
+                "Backend": [
+                    "def",
+                    "return",
+                    "class",
+                    "None",
+                    "True",
+                    "False",
+                    "self",
+                    "init",
+                    "lambda",
+                    "global",
+                    "nonlocal",
+                    "yield",
+                    "with",
+                    "as",
+                    "assert",
+                    "del",
+                    "from",
+                    "global",
+                    "nonlocal",
+                    "pass",
+                    "raise",
+                    "yield",
+                    "if",
+                    "else",
+                    "elif",
+                    "for",
+                    "while",
+                    "break",
+                    "continue",
+                    "try",
+                    "except",
+                    "finally",
+                    "in",
+                    "is",
+                    "and",
+                    "or",
+                    "not",
+                    "import",
+                    "from",
+                    "as",
+                    "try",
+                    "except",
+                    "finally",
+                    "with",
+                    "as",
+                    "exec",
+                    "print",
+                    "int",
+                    "float",
+                    "str",
+                    "list",
+                    "dict",
+                    "tuple",
+                    "set",
+                    "bool",
+                    "bytes",
+                    "object",
+                ],
+                "Database": [
+                    "SELECT",
+                    "FROM",
+                    "WHERE",
+                    "GROUP&nbsp;BY",
+                    "ORDER&nbsp;BY",
+                    "LIMIT",
+                    "OFFSET",
+                    "HAVING",
+                    "DISTINCT",
+                    "INSERT INTO",
+                    "VALUES",
+                    "UPDATE",
+                    "SET",
+                    "DELETE",
+                    "ALTER&nbsp;TABLE",
+                    "DROP&nbsp;TABLE",
+                    "CREATE&nbsp;TABLE",
+                    "CREATE&nbsp;INDEX",
+                    "AND",
+                    "OR",
+                    "NOT",
+                    "IN",
+                    "BETWEEN",
+                    "IS&nbsp;NULL",
+                    "IS&nbsp;NOT&nbsp;NULL",
+                ],
+                "Frontend": [
+                    "<!DOCTYPE html>",
+                    "<html>",
+                    "</html>",
+                    "<body>",
+                    "</body>",
+                    "<script>",
+                    "</script>",
+                    "<style>",
+                    "</style>",
+                    "<link>",
+                    "<meta>",
+                    "<head>",
+                    "</head>",
+                    "<title>",
+                    "</title>",
+                    "<header>",
+                    "</header>",
+                    "<footer>",
+                    "</footer>",
+                    "<main>",
+                    "</main>",
+                    "<div>",
+                    "</div>",
+                    "<span>",
+                    "</span>",
+                    "<p>",
+                    "</p>",
+                    "<a>",
+                    "</a>",
+                    "<img>",
+                    "<ul>",
+                    "<ol>",
+                    "<li>",
+                    "<section>",
+                    "</section>",
+                    "<button>",
+                    "</button>",
+                    "<input>",
+                    "<label>",
+                    "<form>",
+                    "</form>",
+                    "<select>",
+                    "<option>",
+                    "<textarea>",
+                    "<table>",
+                    "<tr>",
+                    "<td>",
+                    "<th>",
+                    "<thead>",
+                    "<tbody>",
+                    "<tfoot>",
+                ],
             }
 
             # Apply keyword highlighting
             for kw in keywords[layer]:
-                message = re.sub(r'\b' + re.escape(kw) + r'\b', f'<span style="color: #4654B3; font-weight: bold;">{kw}</span>', message)
+                message = re.sub(
+                    r"\b" + re.escape(kw) + r"\b",
+                    f'<span style="color: #4654B3; font-weight: bold;">{kw}</span>',
+                    message,
+                )
 
         # Add line breaks
         if role == "Doc" or role == "Dev":
