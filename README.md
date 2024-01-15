@@ -27,3 +27,7 @@ https://github.com/OpenBMB/ChatDev
 
 ### ToDo's:
 - View [Notion](https://www.notion.so/a1c5a5cbbd014e57803101a263f437f8?v=9467436d72d24f279e815116d5683bbf)
+
+
+### Latex:
+- View [Overleaf](https://www.overleaf.com/read/kmbfdrvtzycd#0b3699)
