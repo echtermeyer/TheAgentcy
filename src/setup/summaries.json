@@ -37,7 +37,5 @@
 
   "LocalLore": "Summary: The project is to develop a website named 'LocalLore'. This site will allow users to explore and contribute to local history and folklore, with entries like 'Haunted Landmarks', 'Historic Battles', or 'Local Legends'. The database will store these stories, categorized by location and theme. The design will be reminiscent of an old library, focusing on storytelling and historical data, without functionalities for discussions or social networking.",
 
-  "RecipeRescue": "Summary: The project is to develop a website named 'RecipeRescue'. Home chefs can submit their failed recipes or cooking mishaps and receive tailored advice on how to improve, like 'Soggy Pies', 'Overcooked Steaks', or 'Bland Soups'. The database will store user submissions and the provided cooking tips. The site will have a kitchen mishap theme, focusing on culinary problem-solving, excluding video tutorials or ingredient delivery.",
-
   "SkillSwap": "Summary: The project is to develop a website named 'SkillSwap'. People can offer and request skill exchanges, like 'Language Lessons', 'Cooking Classes', or 'Coding Tutorials'. The database will store offered and requested skills, along with user locations. The design will be community-oriented and practical, focusing on skill exchange facilitation, without features for monetary transactions or professional services."
 }

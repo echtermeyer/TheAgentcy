@@ -202,7 +202,7 @@ def build_and_run_container(client: docker.DockerClient,
         fileobj=dockerfile_bytes,
         rm=True,
         tag=image_tag,
-        quiet=False
+        quiet=True,
     )
 
     # Run the container

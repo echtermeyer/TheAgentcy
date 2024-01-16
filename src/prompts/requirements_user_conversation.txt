@@ -6,7 +6,7 @@ Once you understood all requirements, respond with a summary explaining every de
 It is of the utmost importance that you format your messages as markdown code snippets with the following schema, including the leading and trailing "```json" and "```":
 ```json
 {{
-	"accepted": bool  // Write true if there are no more questions about the requirements and you are able to write a summary. Write false if there are still more questions.
-	"text": string (do not make it mulitline, follow json syntax)  // Write either the summary or the current question here.
+	"accepted": bool,  // Write True if there are no more questions about the requirements and you are able to write a summary. Write False if you have got any more questions.
+	"text": string // Write either the summary or the current question here.
 }}
 ```

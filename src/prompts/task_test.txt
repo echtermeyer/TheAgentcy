@@ -3,11 +3,14 @@ This is the code you have to check:
 
 {docker_logs}
 
-Based on this write a report and point out any mistakes or errors you have found. Explain them and suggest how they could be corrected. Only point errors, mistakes or things that are incorrect do not talk about things that are well done. It is possible that there are no errors or bad practices. If this is the case and no changes are required, always say so explicitely!
+{backend_docs}
+
+Write a report and point out any mistakes or errors you have found. Explain them and suggest how they could be corrected. 
+Only point out errors. Do not talk about things that are well done. It is possible that there are no errors or bad practices. If this is the case, please state this explicitly.
 The output must be a markdown code snippet formatted in the exact following schema, including the leading and trailing "```json" and "```":
 ```json
 {{
-	"accepted": bool  // Write true if no more changes are required and false if there still are errors or changes that need to be made. If you are asked to answer questions, write false.
-	"text": string (do not make it multiline, follow json syntax) // Write concisely what to change about the code and why this change is required. no changes are required, always say so explicitely!
+	"accepted": bool,  // Write True if no more changes are required and False if there are errors or changes need to be made.
+	"text": string // Write concisely what to change about the code and why this change is required. If no changes need to be made, please state this explicitly. DONT USE LINE BREAKS. DONT USE QUOTATION MARKS WITHIN THE TEXT!
 }}
 ```

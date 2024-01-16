@@ -145,7 +145,7 @@ class PythonSandbox(Sandbox):
                 time.sleep(1)  # Wait for a second before checking again
         except Exception as e:
             print(e)
-
+        time.sleep(5) # wait for logs to arrive
         return running_container
 
 

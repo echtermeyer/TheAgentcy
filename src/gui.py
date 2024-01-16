@@ -50,7 +50,7 @@ class Gui(QMainWindow):
     def __setup_gui_layout(self):
         # Set window properties
         self.setWindowTitle("Mutiagent Development Suite")
-        self.setGeometry(100, 100, 800, 800)
+        self.setGeometry(100, 100, 1000, 800)
 
         # Set the window icon
         icon_path = (

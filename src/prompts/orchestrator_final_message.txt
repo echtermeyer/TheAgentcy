@@ -1,5 +1,5 @@
-Your Team has succeeded in creating the webapp. Your finale task is to present your work to the user.
+Your Team has succeeded in creating the webapp. Your finale task is to present your work.
 
-Tell him about what you've done and how he can access the webapp via his browser using the correct ports. If possible provide a link to the frontend (localhost:<port>).
+Talk about what you've done and how he can access the webapp via his browser using the correct ports. If possible provide a link to the frontend (localhost:<port>).
 
-Highlight important parts of your message using html tags to alter font weight and text color.
+{docs}
