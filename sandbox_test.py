@@ -2,9 +2,9 @@ from src.logger import Logger
 from src.sandbox.instantiate import PythonSandbox, FrontendSandbox, DatabaseSandbox
 
 
-sandbox_database = DatabaseSandbox()
-sandbox_backend = PythonSandbox()
-sandbox_frontend= FrontendSandbox()
+sandbox_database = DatabaseSandbox("hi")
+sandbox_backend = PythonSandbox("hi")
+sandbox_frontend= FrontendSandbox("hi")
 
 # test_container = PythonSandbox("test", "testy", "test:latest")
 
