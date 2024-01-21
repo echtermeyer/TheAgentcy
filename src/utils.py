@@ -77,25 +77,23 @@ def write_str_to_file(string: str, full_path: Path) -> str:
 #     return response  # either the Code string or json
 
 
-
-def parse_message(message:str, parser:dict):
+def parse_message(message: str, parser: dict):
     if parser["use_parser"] == False:
         return message
-    
+
     if parser["type"] == "code":
         language = parser["fields"][0]
         pattern = f"```{language}(.*?)```"
 
     elif parser["type"] == "json":
         pattern = r"```json\s*(.*?)```"
-    
+
     regex_obj = re.search(pattern, message, re.DOTALL)
     string_dict = regex_obj.group(1).strip()
-    
+
     result = string_dict
-    
+
     if parser["type"] == "json":
         result = json.loads(string_dict)
 
-    return result  
-
+    return result

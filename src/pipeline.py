@@ -97,7 +97,7 @@ class Pipeline(QObject):
                 else:
                     self.__transmit_message_signal(sender=sender, message=message)
 
-            self.title = self.__create_project_name() # TODO: Use real project title
+            self.title = self.__create_project_name()  # TODO: Use real project title
         else:
             # Randomly select a predefined use case and add it to the memory of the orchestrator if fast forward is enabled
             with open(self.root / "src/setup/summaries.json") as file:
@@ -112,17 +112,25 @@ class Pipeline(QObject):
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
         summarization_task = self.orchestrator.get_prompt_text("summarize")
         requirements = self.orchestrator.answer(summarization_task)
-        requirements = parse_message(requirements, parser={
-            "type": "json",
-            "use_parser": True,
-            "fields": "[('database', str), ('backend', str), ('frontend', str)]"
-        })
+        requirements = parse_message(
+            requirements,
+            parser={
+                "type": "json",
+                "use_parser": True,
+                "fields": "[('database', str), ('backend', str), ('frontend', str)]",
+            },
+        )
 
         docs = {}
         database_code, docs["database"] = self.develop("database", requirements, docs)
         backend_code, docs["backend"] = self.develop("backend", requirements, docs)
         frontend_code, docs["frontend"] = self.develop("frontend", requirements, docs)
-        docs_as_string = "".join([f"Here is the documentation for the {layer}: {doc}\n" for layer, doc in docs.items()])
+        docs_as_string = "".join(
+            [
+                f"Here is the documentation for the {layer}: {doc}\n"
+                for layer, doc in docs.items()
+            ]
+        )
 
         self.__transmit_animation_signal(f"{self.orchestrator.name} is typing")
         final_prompt = self.orchestrator.get_prompt_text("finalize")
@@ -165,9 +173,16 @@ class Pipeline(QObject):
                 DatabaseSandbox(self.title)
 
             if turn == 0:
-                prev_docs = "".join([f"Here is the documentation for the {layer}: {doc}\n" for layer, doc in docs.items()])
+                prev_docs = "".join(
+                    [
+                        f"Here is the documentation for the {layer}: {doc}\n"
+                        for layer, doc in docs.items()
+                    ]
+                )
                 dev_query = developer_kickoff.format(
-                    language=developer.languages, requirements=requirements, prev_docs = prev_docs
+                    language=developer.languages,
+                    requirements=requirements,
+                    prev_docs=prev_docs,
                 )
             else:
                 dev_query = developer_followup.format(
@@ -189,17 +204,21 @@ class Pipeline(QObject):
                     if layer == "backend"
                     else None
                 )
-                docker_container = docker_sandbox.trigger_execution_pipeline( #TODO: AttributeError: 'str' object has no attribute 'logs'
+                docker_container = docker_sandbox.trigger_execution_pipeline(  # TODO: AttributeError: 'str' object has no attribute 'logs'
                     dev_code, dependencies
                 )
-                
+
                 prefix = "These are the last few log statements that one gets when running the code in a dedicated docker container:\n"
                 docker_logs = prefix + docker_container.logs(tail=10).decode("utf-8")
                 print("\n== DOCKER LOGS ==", docker_logs)
 
             # Send message, code and docker logs to tester agent
             # if layer is frontend, the tester need the documentation of the backend to check if the dev created one element for each api endpoint
-            backend_docs = f"This is the documentation for the backend: {docs['backend']}" if layer == "frontend" else ""
+            backend_docs = (
+                f"This is the documentation for the backend: {docs['backend']}"
+                if layer == "frontend"
+                else ""
+            )
 
             tester_query = tester_followup.format(
                 code=dev_code, docker_logs=docker_logs, backend_docs=backend_docs
@@ -207,10 +226,13 @@ class Pipeline(QObject):
             self.__transmit_animation_signal(f"{tester.name} is typing")
             tester_message = tester.answer(tester_query, verbose=True)
             tester_dict = parse_message(tester_message, tester.parser)
-            
+
             # Handle error that results from testers not providing a text field in their response
             if tester_dict.get("text") is None:
-                accepted, tester_message = True, "The code ran without any errors and fulfills all requirements"
+                accepted, tester_message = (
+                    True,
+                    "The code ran without any errors and fulfills all requirements",
+                )
             else:
                 accepted, tester_message = tester_dict.values()
 

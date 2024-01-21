@@ -167,7 +167,7 @@ class HumanConversationWrapper:
             prompt = self.prompt_template.format(user_response=self.__user_response)
 
             ai_response_txt = self.agent1.answer(prompt, verbose=True)
-            ai_response = parse_response(ai_response_txt, self.agent1.parser)
+            ai_response = parse_message(ai_response_txt, self.agent1.parser)
             self.__accepted, message = ai_response["accepted"], ai_response["text"]
             self.current_turn += 1
 
@@ -187,7 +187,6 @@ class HumanConversationWrapper:
 
     def is_accepted(self) -> bool:
         return self.__accepted
-
 
 
 # # Depreciated but kept for nostalgic reasons
@@ -249,10 +248,10 @@ class HumanConversationWrapper:
 #                             self.last_message_agent1,
 #                             dependencies=self.docker_dependencies
 #                             )
-                        
+
 #                         docker_logs = """
-#                         These are the last few log statements 
-#                         that one gets when running the code 
+#                         These are the last few log statements
+#                         that one gets when running the code
 #                         in a dedicated docker container:
 #                         """ + docker_container.logs(tail=10).decode("utf-8")
 #                         x = docker_container.logs(tail=10).decode("utf-8").replace("\n", "")
@@ -286,7 +285,7 @@ class HumanConversationWrapper:
 
 #             if self.current_agent == self.agent2:
 #                 self.current_turn += 1
-  
+
 #             self.current_agent = (
 #                 self.agent2 if self.current_agent == self.agent1 else self.agent1
 #             )
