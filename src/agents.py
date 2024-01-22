@@ -31,6 +31,7 @@ class Agent:
         root: Path,
     ) -> None:
         self.root: Path = root
+        self.config: dict = config
 
         self.__name: str = config["name"]
         self.__varname: str = config["varname"]
@@ -121,9 +122,25 @@ class Agent:
 
         self._chain.memory.chat_memory.add_message(message)
 
-    # TODO: use invoke instead
     def answer(self, message: str, verbose=False):
-        # answer = self._chain.run({"message": message})
+        # Take screenshot etc if we're using vision
+        if self.config["model"] == "gpt-4-vision-preview":
+            image_path = take_screenshot()
+            image_base64 = encode_image(image_path)
+
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": message},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": image_base64,
+                            "detail": "auto",
+                        },
+                    },
+                ]
+            )
+
         answer = self._chain.invoke({"message": message})["text"]
         if verbose:
             print(f"\033[34m{self.name}:\033[0m {answer}")

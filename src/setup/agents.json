@@ -112,7 +112,7 @@
   {
     "name": "Frontend Tester",
     "varname": "frontend_test",
-    "model": "gpt-3.5-turbo-1106",
+    "model": "gpt-4-vision-preview",
     "temperature": 0.2,
     "prompts": {
       "followup": "src/prompts/task_test.txt"

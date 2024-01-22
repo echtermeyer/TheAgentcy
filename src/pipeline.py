@@ -152,8 +152,8 @@ class Pipeline(QObject):
         )
 
         docs = {}
-        database_code, docs["database"] = self.develop("database", requirements, docs)
-        backend_code, docs["backend"] = self.develop("backend", requirements, docs)
+        # database_code, docs["database"] = self.develop("database", requirements, docs)
+        # backend_code, docs["backend"] = self.develop("backend", requirements, docs)
         frontend_code, docs["frontend"] = self.develop("frontend", requirements, docs)
         docs_as_string = "".join(
             [
@@ -254,11 +254,12 @@ class Pipeline(QObject):
 
             # Send message, code and docker logs to tester agent
             # if layer is frontend, the tester need the documentation of the backend to check if the dev created one element for each api endpoint
-            backend_docs = (
-                f"This is the documentation for the backend: {docs['backend']}"
-                if layer == "frontend"
-                else ""
-            )
+            # backend_docs = (
+            #     f"This is the documentation for the backend: {docs['backend']}"
+            #     if layer == "frontend"
+            #     else ""
+            # )
+            backend_docs = ""
 
             tester_query = tester_followup.format(
                 code=dev_code, docker_logs=docker_logs, backend_docs=backend_docs
