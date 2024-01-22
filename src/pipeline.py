@@ -1,6 +1,8 @@
+import time
 import json
 import string
 import random
+import datetime
 
 from pathlib import Path
 from langchain.prompts import PromptTemplate
@@ -168,7 +170,8 @@ class Pipeline(QObject):
         tester_followup = tester.get_prompt_text("followup")
 
         for turn in range(5):
-            # If the backend tester didnt accept the backend code, reset the database container, so that the amended backend code can be tested in a clean environment
+            # If the backend tester didnt accept the backend code, reset the database container,
+            # so that the amended backend code can be tested in a clean environment
             if turn != 0 and layer == "backend":
                 DatabaseSandbox(self.title)
 
@@ -204,12 +207,18 @@ class Pipeline(QObject):
                     if layer == "backend"
                     else None
                 )
-                docker_container = docker_sandbox.trigger_execution_pipeline(  # TODO: AttributeError: 'str' object has no attribute 'logs'
+                timestamp_execution = int(
+                    time.mktime(datetime.datetime.now().timetuple())
+                )
+                # TODO: AttributeError: 'str' object has no attribute 'logs'
+                docker_container = docker_sandbox.trigger_execution_pipeline(
                     dev_code, dependencies
                 )
 
                 prefix = "These are the last few log statements that one gets when running the code in a dedicated docker container:\n"
-                docker_logs = prefix + docker_container.logs(tail=10).decode("utf-8")
+                docker_logs = prefix + docker_container.logs(
+                    since=timestamp_execution, tail=10
+                ).decode("utf-8")
                 print("\n== DOCKER LOGS ==", docker_logs)
 
             # Send message, code and docker logs to tester agent
