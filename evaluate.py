@@ -2,34 +2,103 @@ import sys
 import json
 import argparse
 
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 from pathlib import Path
 from PySide6.QtWidgets import QApplication
 
 from src.gui import Gui
 from src.pipeline import Pipeline
 
-# TODO: visualize the metrics
+
+ROOT = Path(__file__).parent
 
 
 def evaluate(command_line_args):
-    if command_line_args.disable_gui:
-        metrics = []
-        for _ in range(command_line_args.iterations):
-            pipeline = Pipeline(command_line_args, evaluate=True)
-            pipeline.start()
+    if not command_line_args.skip_evaluation:
+        if not command_line_args.project:
+            raise ValueError("No project name specified. Please add a project name using -p or --project_name")
+        
+        if command_line_args.disable_gui:
+            metrics = []
+            for _ in range(command_line_args.iterations):
+                pipeline = Pipeline(command_line_args, evaluate=True)
+                pipeline.start()
 
-            metrics.append(pipeline.metrics)
+                metrics.append(pipeline.metrics)
 
-        root = Path("evaluate")
-        root.mkdir(parents=True, exist_ok=True)
-        with open(root / f"{command_line_args.project}.json", "w+") as f:
-            json.dump(metrics, f)
+            (ROOT / "evaluate").mkdir(parents=True, exist_ok=True)
+            with open(ROOT / f"evaluate/{command_line_args.project}.json", "w+") as f:
+                json.dump(metrics, f)
+        else:
+            raise ValueError("Evaluation with GUI is not supported due to required user interaction")
 
-    else:
-        app = QApplication(sys.argv)
-        main_window = Gui(command_line_args)
-        main_window.show()
-        sys.exit(app.exec())
+    # Visualize the metrics. Also use evaluation runs from before
+    visualize_metrics(ROOT / "evaluate")
+
+
+def _load_datasets(names):
+    datasets = {}
+    for name in names:
+        with open("evaluate/" + name, "r") as f:
+            datasets[name.split(".json")[0]] = pd.DataFrame(json.load(f))
+
+    return datasets
+
+
+def visualize_metrics(folder: Path):
+    evaluations = [file.name for file in folder.iterdir() if file.is_file()]
+    datasets = _load_datasets(evaluations)
+
+    # Set the Seaborn style
+    sns.set(style="whitegrid")
+
+    # Create the figure and grid spec
+    fig = plt.figure(figsize=(9, 7))
+    gs = fig.add_gridspec(2, 2)
+
+    plt.suptitle("Evaluation of the Multiagent Development Framework\n", size=18)
+
+    # Time Boxplot
+    ax_time = fig.add_subplot(gs[0, 0])
+    sns.boxplot(
+        data=pd.DataFrame(
+            {name: dataset["time"] for name, dataset in datasets.items()}
+        ),
+        ax=ax_time,
+    )
+    ax_time.set_title("Time")
+
+    # Human Feedback Boxplot
+    ax_feedback = fig.add_subplot(gs[0, 1])
+    sns.boxplot(
+        data=pd.DataFrame(
+            {name: dataset["human_feedback"] for name, dataset in datasets.items()}
+        ),
+        ax=ax_feedback,
+    )
+    ax_feedback.set_title("Human Feedback")
+
+    # Linechart for turns spanning the width of both boxplots
+    ax_linechart = fig.add_subplot(gs[1, :])
+    for name, dataset in datasets.items():
+        database_mean = dataset["turns_database"].mean()
+        backend_mean = dataset["turns_backend"].mean()
+        frontend_mean = dataset["turns_frontend"].mean()
+
+        # Data for line chart
+        line_data = [database_mean, backend_mean, frontend_mean]
+        line_labels = ["Database", "Backend", "Frontend"]
+
+        sns.lineplot(x=line_labels, y=line_data, label=name, ax=ax_linechart)
+    ax_linechart.set_title("Turns LineChart for Different Layers")
+    ax_linechart.legend()
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -62,6 +131,14 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-s",
+        "--skip_evaluation",
+        action="store_true",
+        help="Skip the evalation and instantly show the metrics",
+        required=False,
+    )
+
+    parser.add_argument(
         "-i",
         "--iterations",
         type=int,
@@ -75,7 +152,7 @@ if __name__ == "__main__":
         "--project",
         type=str,
         help="Set the project name to run the evaluation for",
-        required=True,
+        required=False,
     )
 
     evaluate(parser.parse_args())
