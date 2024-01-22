@@ -4,6 +4,7 @@ import string
 import random
 import datetime
 
+from typing import Union
 from pathlib import Path
 from langchain.prompts import PromptTemplate
 
@@ -18,7 +19,7 @@ class Pipeline(QObject):
     message_signal = Signal(str, str, bool)  # For communication with GUI thread
     animation_signal = Signal(str)  # layer, status, on/off
 
-    def __init__(self, command_line_args):
+    def __init__(self, command_line_args, evaluate: bool = False):
         super().__init__()
         self._input = None
         self._pause_execution = False
@@ -27,6 +28,9 @@ class Pipeline(QObject):
         self.description = command_line_args.description
         self.fast_forward = command_line_args.fast_forward
         self.disable_gui = command_line_args.disable_gui
+        self.evaulate = evaluate
+
+        self.__metrics = self.__setup_metrics()
         self.__setup_agents()
 
     def __transmit_message_signal(self, sender, message, is_question=False):
@@ -70,12 +74,35 @@ class Pipeline(QObject):
                 ),
             )
 
+    def __setup_metrics(self) -> dict:
+        if self.evaulate:
+            random.seed(0)
+            
+        return {
+            "project_name": None,
+            "time": 0,
+            "turns_database": 0,
+            "turns_backend": 0,
+            "turns_frontend": 0,
+            "working": 0,
+            "human_feedback": 0,
+        }
+
+    def __add_metrics(self, key: str, value: Union[int, str]) -> None:
+        self.__metrics[key] = value
+
+    @property
+    def metrics(self) -> None:
+        return self.__metrics
+
     def __create_project_name(self, title: str = "Webapp") -> str:
         # Append 4 random chars at the end of the title, seperated by _
         return title + "_" + "".join(random.choices(string.ascii_lowercase, k=4))
 
     def start(self) -> None:
         """Start developing process"""
+        # 0. Setup
+        start_time = time.time()
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
         if not self.fast_forward:
@@ -106,6 +133,7 @@ class Pipeline(QObject):
                 summaries = json.load(file)
 
             summary_key = random.choice(list(summaries.keys()))
+            self.__add_metrics("project_name", summary_key)
             self.title = self.__create_project_name(summary_key)
 
             self.orchestrator.inject_message(summaries[summary_key], kind="ai")
@@ -141,6 +169,9 @@ class Pipeline(QObject):
         self.__transmit_message_signal(
             sender=self.orchestrator.name, message=final_message
         )
+
+        # End of development process
+        self.__add_metrics("time", int(time.time() - start_time))
 
     def develop(self, layer, requirements, docs):
         # Get agents for layer
@@ -246,6 +277,9 @@ class Pipeline(QObject):
                 accepted, tester_message = tester_dict.values()
 
             self.__transmit_message_signal(sender=tester.name, message=tester_message)
+
+            # Overwrite the turn metric with the new value
+            self.__add_metrics(f"turns_{layer}", turn + 1)
 
             if accepted:
                 break
