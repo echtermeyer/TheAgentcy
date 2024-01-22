@@ -19,7 +19,14 @@ https://github.com/OpenBMB/ChatDev
 7. Build docker image via ``docker build . -t <IMAGE_TAG>``
 8. Run Docker container via ``docker run -v /var/run/docker.sock:/var/run/docker.sock <IMAGE_NAME>``
 
-### Running evaluation:
+### Start project:
+After the Multiagent Development System developed a new project, you can start the project using:
+
+```python start_project.py -p <project_name>```
+
+This starts all required Docker container so you can access the frontend using http://localhost:80.
+
+### Run evaluation:
 1. Run ``python evaluate.py -p "<my_project_name"``. The parameter ``-p`` is required. This runs the pipeline with ``-i 10`` different projects as the default value. 
 2. It is also possible to use this file only for displaying the metrics without running the pipeline. You can skip that with ``python evaluate.py -s`` if you just want to inspect the metrics visually. 
 
