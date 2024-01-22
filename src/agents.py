@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from langchain.chains import LLMChain
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.schema.messages import HumanMessage, AIMessage, SystemMessage
 
@@ -39,7 +39,7 @@ class Agent:
         self.__templates: dict = self.__load_prompt_templates(config["prompts"])
         self.__languages: str = self.__load_agent_language()
 
-        self.__chain: LLMChain = self.__setup_chain(
+        self._chain: LLMChain = self.__setup_chain(
             config["model"], config["temperature"]
         )
         self.__parser: dict = config["parser"]
@@ -119,12 +119,12 @@ class Agent:
                 "This message type is not supported. Use one of ['human', 'ai', 'system']"
             )
 
-        self.__chain.memory.chat_memory.add_message(message)
+        self._chain.memory.chat_memory.add_message(message)
 
     # TODO: use invoke instead
     def answer(self, message: str, verbose=False):
-        answer = self.__chain.run({"message": message})
-
+        # answer = self._chain.run({"message": message})
+        answer = self._chain.invoke({"message": message})["text"]
         if verbose:
             print(f"\033[34m{self.name}:\033[0m {answer}")
 

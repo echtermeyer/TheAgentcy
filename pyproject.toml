@@ -21,6 +21,7 @@ numpy = "^1.21.2"
 ipykernel = "^6.29.0"
 matplotlib = "^3.8.2"
 seaborn = "^0.13.1"
+langchain-openai = "^0.0.3"
 
 
 [build-system]
