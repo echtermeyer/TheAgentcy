@@ -4,12 +4,6 @@
     "varname": "orchestrator",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.1,
-    "prompts": {
-      "systemize": "src/prompts/requirements_system_message.txt",
-      "summarize": "src/prompts/requirements_task_summaries.txt",
-      "conversize": "src/prompts/requirements_user_conversation.txt",
-      "finalize": "src/prompts/orchestrator_final_message.txt"
-    },
     "parser": {
       "type": "json",
       "use_parser": true,
@@ -21,10 +15,6 @@
     "varname": "database_dev",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.1,
-    "prompts": {
-      "kickoff": "src/prompts/developer_kickoff_message.txt",
-      "followup": "src/prompts/developer_followup_message.txt"
-    },
     "parser": {
       "type": "code",
       "use_parser": true,
@@ -36,9 +26,6 @@
     "varname": "database_test",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.2,
-    "prompts": {
-      "followup": "src/prompts/task_test.txt"
-    },
     "parser": {
       "type": "json",
       "use_parser": true,
@@ -50,9 +37,6 @@
     "varname": "database_doc",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.5,
-    "prompts": {
-      "document": "src/prompts/task_document.txt"
-    },
     "parser": null
   },
   {
@@ -60,10 +44,6 @@
     "varname": "backend_dev",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.1,
-    "prompts": {
-      "kickoff": "src/prompts/developer_kickoff_message.txt",
-      "followup": "src/prompts/developer_followup_message.txt"
-    },
     "parser": {
       "type": "code",
       "use_parser": true,
@@ -75,9 +55,6 @@
     "varname": "backend_test",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.2,
-    "prompts": {
-      "followup": "src/prompts/task_test.txt"
-    },
     "parser": {
       "type": "json",
       "use_parser": true,
@@ -89,9 +66,6 @@
     "varname": "backend_doc",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.5,
-    "prompts": {
-      "document": "src/prompts/task_document.txt"
-    },
     "parser": null
   },
   {
@@ -99,10 +73,6 @@
     "varname": "frontend_dev",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.1,
-    "prompts": {
-      "kickoff": "src/prompts/developer_kickoff_message.txt",
-      "followup": "src/prompts/developer_followup_message.txt"
-    },
     "parser": {
       "type": "code",
       "use_parser": true,
@@ -114,9 +84,6 @@
     "varname": "frontend_test",
     "model": "gpt-4-vision-preview",
     "temperature": 0.2,
-    "prompts": {
-      "followup": "src/prompts/task_test.txt"
-    },
     "parser": {
       "type": "json",
       "use_parser": true,
@@ -128,9 +95,6 @@
     "varname": "frontend_doc",
     "model": "gpt-3.5-turbo-1106",
     "temperature": 0.5,
-    "prompts": {
-      "document": "src/prompts/task_document.txt"
-    },
     "parser": null
   }
 ]

@@ -106,15 +106,7 @@ class Pipeline(QObject):
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
         if not self.fast_forward:
-            # Inject task system message and create prompt template for human conversation
-            system_message = self.orchestrator.get_prompt_text("systemize")
-            conversation_task = self.orchestrator.get_prompt_text("conversize")
-
-            conversation_with_user = HumanConversationWrapper(
-                self.orchestrator,
-                system_message=system_message,
-                conversation_task=conversation_task,
-            )
+            conversation_with_user = HumanConversationWrapper(self.orchestrator)
 
             for ai_message in conversation_with_user:
                 sender, message = ai_message
@@ -140,8 +132,8 @@ class Pipeline(QObject):
             self.__transmit_message_signal(sender="You", message=summaries[summary_key])
 
         # 0b. Orchestrator devises tasks for database, backend & frontend devs based on user requirements
-        summarization_task = self.orchestrator.get_prompt_text("summarize")
-        requirements = self.orchestrator.answer(summarization_task)
+        prompt_task_derivation = self.orchestrator.get_prompt_text("task derivation")
+        requirements = self.orchestrator.answer(prompt_task_derivation)
         requirements = parse_message(
             requirements,
             parser={
@@ -163,9 +155,9 @@ class Pipeline(QObject):
         )
 
         self.__transmit_animation_signal(f"{self.orchestrator.name} is typing")
-        final_prompt = self.orchestrator.get_prompt_text("finalize")
-        final_prompt = final_prompt.format(docs=docs_as_string)
-        final_message = self.orchestrator.answer(final_prompt)
+        prompt_present_product = self.orchestrator.get_prompt_text("present product")
+        prompt_present_product = prompt_present_product.format(docs=docs_as_string)
+        final_message = self.orchestrator.answer(prompt_present_product)
         self.__transmit_message_signal(
             sender=self.orchestrator.name, message=final_message
         )
@@ -198,14 +190,11 @@ class Pipeline(QObject):
         # 1b. Conversation: Dev & Tester
         developer_kickoff = developer.get_prompt_text("kickoff")
         developer_followup = developer.get_prompt_text("followup")
-        tester_followup = tester.get_prompt_text("followup")
+        tester_first_check = tester.get_prompt_text("first check")
+        tester_further_checks = tester.get_prompt_text("further checks")
 
+        # Repeat the conversation until the tester accepts the code
         for turn in range(5):
-            # If the backend tester didnt accept the backend code, reset the database container,
-            # so that the amended backend code can be tested in a clean environment
-            if turn != 0 and layer == "backend":
-                DatabaseSandbox(self.title)
-
             if turn == 0:
                 prev_docs = "".join(
                     [
@@ -220,7 +209,7 @@ class Pipeline(QObject):
                 )
             else:
                 dev_query = developer_followup.format(
-                    feedback=tester_message, language=developer.languages
+                    feedback=tester_feedback, language=developer.languages
                 )
 
             # Send query to dev agent
@@ -238,21 +227,27 @@ class Pipeline(QObject):
                     if layer == "backend"
                     else None
                 )
+                 # If the backend tester didnt accept the last backend code, reset the database container,
+                # so that the amended backend code can be tested in a clean environment
+                if turn != 0 and layer == "backend":
+                    DatabaseSandbox(self.title)
+
                 timestamp_execution = int(
                     time.mktime(datetime.datetime.now().timetuple())
                 )
-                # TODO: AttributeError: 'str' object has no attribute 'logs'
-                docker_container = docker_sandbox.trigger_execution_pipeline(
-                    dev_code, dependencies
-                )
 
-                prefix = "These are the last few log statements that one gets when running the code in a dedicated docker container:\n"
-                docker_logs = prefix + docker_container.logs(
+                docker_container = docker_sandbox.trigger_execution_pipeline(dev_code, dependencies)
+
+                docker_logs = docker_container.logs(
                     since=timestamp_execution, tail=10
                 ).decode("utf-8")
-                print("\n== DOCKER LOGS ==", docker_logs)
 
-            # Send message, code and docker logs to tester agent
+                if len(docker_logs) != 0:
+                    docker_logs = "Docker container logs:\n" + docker_logs
+
+                print("\n== DOCKER LOGS ==\n", docker_logs)
+                
+            # Send code and docker logs to tester agent
             # if layer is frontend, the tester need the documentation of the backend to check if the dev created one element for each api endpoint
             backend_docs = (
                 f"This is the documentation for the backend: {docs['backend']}"
@@ -260,29 +255,47 @@ class Pipeline(QObject):
                 else ""
             )
 
-            tester_query = tester_followup.format(
-                code=dev_code, docker_logs=docker_logs, backend_docs=backend_docs
-            )
+            # Tester checks code
+            tester_responses = []
             self.__transmit_animation_signal(f"{tester.name} is typing")
-            tester_message = tester.answer(tester_query, verbose=True)
-            tester_dict = parse_message(tester_message, tester.parser)
 
-            # Handle error that results from testers not providing a text field in their response
-            if tester_dict.get("text") is None:
-                accepted, tester_message = (
-                    True,
-                    "The code ran without any errors and fulfills all requirements",
+            # Make initial check
+            prompt_first_check = tester_first_check.format(
+                code=dev_code, 
+                docker_logs=docker_logs, 
+                backend_docs=backend_docs
+            )
+            tester_responses.append(tester.answer(prompt_first_check, verbose=True))
+
+            # Make further checks. One API call for each set of 3 bugfixes.
+            num_bugfixes = len(tester.bugfixes)
+            for i in range(0, num_bugfixes, 3):
+                bugfixes_subset_list = tester.bugfixes[i:min(i + 3, num_bugfixes)]
+                bugfixes_subset_string = " ".join(bugfixes_subset_list)
+                prompt_bugfix = tester_further_checks.format(
+                    code=dev_code,
+                    bugfixes=bugfixes_subset_string,
                 )
-            else:
-                accepted, tester_message = tester_dict.values()
 
-            self.__transmit_message_signal(sender=tester.name, message=tester_message)
+                tester_responses.append(tester.answer(prompt_bugfix, verbose=True))
+                
+            tester_response_parsed = [parse_message(response, tester.parser) for response in tester_responses]
+
+            if sum([response["accepted"] for response in tester_response_parsed]) == len(tester_response_parsed):
+                tester_feedback = "The code ran without any errors and fulfills all requirements"
+                self.__transmit_message_signal(sender=tester.name, message=tester_feedback)
+                break
+
+            else:
+                tester_feedback = ""
+                for response in tester_response_parsed:
+                    if not response["accepted"]:
+                        tester_feedback += response["text"] + "\n\n"
+                self.__transmit_message_signal(sender=tester.name, message=tester_feedback)
 
             # Overwrite the turn metric with the new value
             self.__add_metrics(f"turns_{layer}", turn + 1)
 
-            if accepted:
-                break
 
         # 1c. Documenter creates documentation
         self.__transmit_animation_signal(f"{documenter.name} is typing")

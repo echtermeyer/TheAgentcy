@@ -152,8 +152,8 @@ class PythonSandbox(Sandbox):
             start_time = time.time()
             while True:
                 logs = running_container.logs(tail=10).decode('utf-8')
-                if logs != '':
-                    break  # Logs are available
+                # if logs != '':  # <-- This logic doesnt work
+                #     break  # Logs are available
                 if time.time() - start_time > 5:
                     break  # 5 seconds have passed
                 time.sleep(0.1)  # Short pause to prevent high CPU usage

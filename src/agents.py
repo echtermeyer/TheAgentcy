@@ -36,9 +36,14 @@ class Agent:
         self.__name: str = config["name"]
         self.__varname: str = config["varname"]
 
+        with open(Path("src/prompts.json"), "r") as f:
+            self.prompts = json.load(f)
+
         self.__character: str = self.__load_agent_character()
-        self.__templates: dict = self.__load_prompt_templates(config["prompts"])
+        self.__templates: dict = self.__load_prompt_templates()
         self.__languages: str = self.__load_agent_language()
+
+        self.bugfixes = self.prompts["specific"][self.__varname].get("bugfixes")
 
         self._chain: LLMChain = self.__setup_chain(
             config["model"], config["temperature"]
@@ -74,21 +79,24 @@ class Agent:
             return "html/css/javascript"
 
     def __load_agent_character(self) -> str:
-        with open(self.root / f"src/characters/{self.__varname}.txt", "r") as f:
-            agent_character = f.read()
+        return self.prompts["specific"][self.__varname]["character"]
 
-        return agent_character
-
-    def __load_prompt_templates(self, prompt_paths: dict) -> dict:
-        return {
-            key: open(self.root / prompt_path, "r").read()
-            for key, prompt_path in prompt_paths.items()
-        }
+    def __load_prompt_templates(self) -> dict:
+        if self.__varname == "orchestrator":
+            return {key: prompt for key, prompt in self.prompts["specific"][self.__varname].items()}
+        else:
+            role = self.__varname.split("_")[1]
+            return {key: prompt for key, prompt in self.prompts["generic"][role].items()}
 
     def __setup_chain(self, model: str, temperature: float) -> LLMChain:
+        max_tokens=4_096
+        if self.config["model"] == "gpt-4-vision-preview":
+            max_tokens=300            
+
         llm = ChatOpenAI(
             model_name=model,
             temperature=temperature,
+            max_tokens=4_096 , 
         )
 
         prompt = ChatPromptTemplate(
@@ -125,21 +133,24 @@ class Agent:
     def answer(self, message: str, verbose=False):
         # Take screenshot etc if we're using vision
         if self.config["model"] == "gpt-4-vision-preview":
-            image_path = take_screenshot()
-            image_base64 = encode_image(image_path)
+            try:
+                image_path = take_screenshot()
+                image_base64 = encode_image(image_path)
 
-            message = HumanMessage(
-                content=[
-                    {"type": "text", "text": message},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": image_base64,
-                            "detail": "auto",
+                message = HumanMessage(
+                    content=[
+                        {"type": "text", "text": message},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}",
+                                "detail": "auto",
+                            },
                         },
-                    },
-                ]
-            )
+                    ]
+                )
+            except Exception as e:
+                print("Screenshot could not be taken. Error: ", e)
 
         answer = self._chain.invoke({"message": message})["text"]
         if verbose:
@@ -152,8 +163,6 @@ class HumanConversationWrapper:
     def __init__(
         self,
         agent1: Agent,
-        system_message: str,
-        conversation_task: str,
         max_turns: int = 10,
     ) -> None:
         self.agent1: Agent = agent1
@@ -165,8 +174,13 @@ class HumanConversationWrapper:
         self.__accepted = False
 
         # Inject task system message and create prompt template for human conversation
-        self.agent1.inject_message(system_message, kind="system")
-        self.prompt_template = PromptTemplate.from_template(conversation_task)
+        prompt_requirement_retrieval = self.orchestrator.get_prompt_text("requirement_retrieval")
+        prompt_followup_question = self.orchestrator.get_prompt_text("followup_question")
+
+        # Inject task system message and create prompt template for human conversation
+        self.agent1.inject_message(prompt_requirement_retrieval, kind="system")
+        self.prompt_template = PromptTemplate.from_template(prompt_followup_question)
+
 
     def __iter__(self):
         return self
@@ -205,109 +219,3 @@ class HumanConversationWrapper:
     def is_accepted(self) -> bool:
         return self.__accepted
 
-
-# # Depreciated but kept for nostalgic reasons
-# class ConversationWrapper:
-#     def __init__(
-#         self,
-#         agent1: Agent,
-#         agent2: Agent,
-#         requirements: str,
-#         agent1_template: str,
-#         agent2_template: str,
-#         kickoff: str,
-#         docker_sandbox,
-#         docker_dependencies,
-#         max_turns: int = 5,
-#     ) -> None:
-#         self.agent1: Agent = agent1
-#         self.agent2: Agent = agent2
-
-#         self.requirements: str = requirements
-
-#         self.agent1_template = PromptTemplate.from_template(agent1_template)
-#         self.agent2_template = PromptTemplate.from_template(agent2_template)
-
-#         kickoff = PromptTemplate.from_template(kickoff)
-#         kickoff = kickoff.format(language=agent1.languages, requirements=requirements)
-
-#         self.docker_sandbox = docker_sandbox
-#         self.docker_dependencies = docker_dependencies
-
-#         self.last_message_agent1: str = None
-#         self.last_message_agent2: str = kickoff
-
-#         self.max_turns: int = max_turns
-#         self.accepted: bool = False
-
-#         self.current_turn: int = 0
-#         self.current_agent: Agent = agent1
-
-#     def __iter__(self):
-#         return self
-
-#     def __next__(self):
-#         if self.accepted == False and self.current_turn < self.max_turns:
-#             if self.current_turn == 0 and self.current_agent == self.agent1:
-#                 # handle first turn. use start_query which is the last_message_agent2
-#                 current_query = self.last_message_agent2
-#             else:
-#                 # handle following turns
-#                 if self.current_agent == self.agent1:
-#                     current_query = self.agent1_template.format(
-#                         feedback=self.last_message_agent2,
-#                         language=self.agent1.languages,
-#                     )
-#                 else:
-#                     # run code in docker
-#                     if self.docker_sandbox is not None:
-#                         docker_container = self.docker_sandbox.trigger_execution_pipeline(
-#                             self.last_message_agent1,
-#                             dependencies=self.docker_dependencies
-#                             )
-
-#                         docker_logs = """
-#                         These are the last few log statements
-#                         that one gets when running the code
-#                         in a dedicated docker container:
-#                         """ + docker_container.logs(tail=10).decode("utf-8")
-#                         x = docker_container.logs(tail=10).decode("utf-8").replace("\n", "")
-#                     else:
-#                         docker_logs = ""
-
-#                     current_query = self.agent2_template.format(
-#                         code=self.last_message_agent1,
-#                         docker_logs=docker_logs
-#                     )
-
-#             response = self.current_agent.answer(current_query, verbose=True)
-#             response = parse_response(response, self.current_agent.parser)
-
-#             # Can be dict [tester or documenter] or code [dev]
-#             message = response["text"] if type(response) == dict else response
-
-#             if type(response) == dict and self.current_agent == self.agent2:
-#                 self.accepted = response["accepted"]
-
-#             if self.current_agent == self.agent1:
-#                 self.last_message_agent1 = message
-#             else:
-#                 self.last_message_agent2 = message
-
-#             # save now before updating self.current_agent
-#             return_values = (
-#                 self.current_agent.name,
-#                 message,
-#             )
-
-#             if self.current_agent == self.agent2:
-#                 self.current_turn += 1
-
-#             self.current_agent = (
-#                 self.agent2 if self.current_agent == self.agent1 else self.agent1
-#             )
-
-#             return return_values
-
-#         else:
-#             raise StopIteration
