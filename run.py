@@ -33,6 +33,7 @@ if __name__ == "__main__":
         "-ff",
         "--fast_forward",
         action="store_true",
+        default="-ff",
         help="Pass this flag to skip the user interaction with the orchestrator and use a predefined use-case",
         required=False,
     )
@@ -41,6 +42,7 @@ if __name__ == "__main__":
         "-dg",
         "--disable_gui",
         action="store_true",
+        # default="-dg",
         help="Pass this flag to disable GUI and run in terminal only",
         required=False,
     )
