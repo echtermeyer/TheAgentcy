@@ -1,4 +1,4 @@
-![Agentcy Banner](src\docs\images\Agentcy.png)
+![Agentcy Banner](https://drive.google.com/uc?export=view&id=106MBhvRI0U0-hbdouKfXUNlTjXcOQIAt)
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ Ensure that the Docker Daemon is running on your host machine since *Agentcy* ut
 
 ## If Everything Works...
 
-![Chatbox Photo](src\docs\images\Chatbox.png)
+![Chatbox Photo](https://drive.google.com/uc?export=view&id=1lOdjvR1pPfGiJPbWR4sVVdd-XhBTqNQM)
 
 If the installation and configuration were successful, a chat window similar to the one shown above should appear when you start the program.
 
@@ -51,7 +51,7 @@ If the installation and configuration were successful, a chat window similar to 
 
 The Chat Architecture is implemented accordingly to the following showcase. (In German)
 
-![Chat Architecture](src\docs\images\Architecture.png)
+![Chat Architecture](https://drive.google.com/uc?export=view&id=1NS9cWTKXAmKUugRCFVl0avJzlgwuFMYi)
 
 The project leverages a specialized architecture that assigns distinct roles to LLM-Agents, streamlining the development lifecycle:
 
@@ -61,7 +61,7 @@ The project leverages a specialized architecture that assigns distinct roles to 
 
 This setup emphasizes iterative development, inter-agent communication, and thorough documentation for an integrated and error-corrected software development process.
 
-## Advanced Technology Architecture
+## Features
 
 *Agentcy* differentiates itself with an architecture that not only embraces modern development practices but also leverages the power of containerization and live server capabilities:
 
