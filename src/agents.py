@@ -86,9 +86,14 @@ class Agent:
         }
 
     def __setup_chain(self, model: str, temperature: float) -> LLMChain:
+        max_tokens=None
+        if self.config["model"] == "gpt-4-vision-preview":
+            max_tokens=500            
+
         llm = ChatOpenAI(
             model_name=model,
             temperature=temperature,
+            max_tokens=max_tokens , 
         )
 
         prompt = ChatPromptTemplate(
@@ -122,9 +127,9 @@ class Agent:
 
         self._chain.memory.chat_memory.add_message(message)
 
-    def answer(self, message: str, verbose=False):
+    def answer(self, message: str, use_vision=False, verbose=False):
         # Take screenshot etc if we're using vision
-        if self.config["model"] == "gpt-4-vision-preview":
+        if use_vision:
             image_path = take_screenshot()
             image_base64 = encode_image(image_path)
 
@@ -134,8 +139,8 @@ class Agent:
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": image_base64,
-                            "detail": "auto",
+                            "url": f"data:image/jpeg;base64,{image_base64}"
+                            # "detail": "auto",
                         },
                     },
                 ]

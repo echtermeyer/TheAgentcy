@@ -264,7 +264,9 @@ class Pipeline(QObject):
                 code=dev_code, docker_logs=docker_logs, backend_docs=backend_docs
             )
             self.__transmit_animation_signal(f"{tester.name} is typing")
-            tester_message = tester.answer(tester_query, verbose=True)
+            # Vision takes up about 5100 tokens. Current limit is 10_000 tokens per minute, so we can use it just once.
+            use_vision = True if layer == "frontend" and turn == 0 else False
+            tester_message = tester.answer(tester_query, use_vision=use_vision, verbose=True)
             tester_dict = parse_message(tester_message, tester.parser)
 
             # Handle error that results from testers not providing a text field in their response
