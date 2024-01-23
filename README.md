@@ -1,44 +1,77 @@
-# Multi-Agent Frontend Developer
+![Agentcy Banner](src\docs\images\Agentcy.png)
 
-Our goal is to create a state-of-the art multi-agent framework which can be used to create frontend applications. The framework leverages open-source and closed-source LLMs for development. Multiple agents work and communicate together until a good result is achieved.
+## Quick Start
 
-This project builds on top of ChatDev which is just able to create simple games:
-https://github.com/OpenBMB/ChatDev
+Before diving into the world of fully automated development of distributed web applications, make sure to follow these steps to get the *Agentcy* project up and running.
 
-### Getting started:
-1. Install [poetry](https://python-poetry.org/docs/basic-usage/) 
-2. Make sure ``poetry`` is added to path 
-3. Clone project and execute ``poetry install`` and afterwards ``poetry shell``
-4. When adding new packages use ``poetry add <NAME>`` instead of usual ``pip install <NAME>``
-5. Create .venv in project ``poetry config virtualenvs.in-project = true``
-6. Add OpenAI credentials in [.env](.env) 
-    ```
-    OPENAI_ORG=
-    OPENAI_API_KEY=
-    ```
-7. Build docker image via ``docker build . -t <IMAGE_TAG>``
-8. Run Docker container via ``docker run -v /var/run/docker.sock:/var/run/docker.sock <IMAGE_NAME>``
+### Installation
 
-### Start project:
-After the Multiagent Development System developed a new project, you can start the project using:
+Agentcy uses Poetry for dependency management. Ensure that you have Poetry installed before proceeding. If not, you can find the installation instructions here: [Poetry Installation](https://python-poetry.org/docs/#installation).
 
-```python start_project.py -p <project_name>```
+After installing Poetry, execute these commands in your terminal:
 
-This starts all required Docker container so you can access the frontend using http://localhost:80.
+```bash
+poetry install
+```
 
-### Run evaluation:
-1. Run ``python evaluate.py -p "<my_project_name"``. The parameter ``-p`` is required. This runs the pipeline with ``-i 10`` different projects as the default value. 
-2. It is also possible to use this file only for displaying the metrics without running the pipeline. You can skip that with ``python evaluate.py -s`` if you just want to inspect the metrics visually. 
+This command will install all the necessary dependencies for the project. Once the installation is complete, you can activate the virtual environment with the following command:
 
-### Project Members:
-- Benedikt 
-- David
-- Lasse
-- Eric 
+```bash
+poetry shell
+```
 
-### ToDo's:
-- View [Notion](https://www.notion.so/a1c5a5cbbd014e57803101a263f437f8?v=9467436d72d24f279e815116d5683bbf)
+Alternatively, you can run the program directly with Poetry:
 
+```bash
+poetry run python.run
+```
 
-### Latex:
-- View [Overleaf](https://www.overleaf.com/read/kmbfdrvtzycd#0b3699)
+### Configuration
+
+Create a `.env` file in the root directory of the project to store your OpenAI key and organization:
+
+```env
+OPENAI_ORG=your-organization
+OPENAI_API_KEY=your-openai-key
+```
+
+Please replace `your-openai-key` and `your-organization` with your actual OpenAI API key and organization details.
+
+### Docker Daemon
+
+Ensure that the Docker Daemon is running on your host machine since *Agentcy* utilizes containerization for some of its functions. 
+
+## If Everything Works...
+
+![Chatbox Photo](src\docs\images\Chatbox.png)
+
+If the installation and configuration were successful, a chat window similar to the one shown above should appear when you start the program.
+
+## Architecture
+
+The Chat Architecture is implemented accordingly to the following showcase. (In German)
+
+![Chat Architecture](src\docs\images\Architecture.png)
+
+The project leverages a specialized architecture that assigns distinct roles to LLM-Agents, streamlining the development lifecycle:
+
+- **Orchestrator**: Serves as the product owner, initiating the development process by translating user requirements into tasks for the agents.
+- **Developer & Tester**: Collaboratively work to design, test, and refine the asigned schema ensuring accuracy and efficiency.
+- **Documentor**: Creates comprehensive documentation based on the final, optimized code to support further development and maintenance.
+
+This setup emphasizes iterative development, inter-agent communication, and thorough documentation for an integrated and error-corrected software development process.
+
+## Advanced Technology Architecture
+
+*Agentcy* differentiates itself with an architecture that not only embraces modern development practices but also leverages the power of containerization and live server capabilities:
+
+- **Containerization**: Agentcy uses Docker to containerize components, enhancing deployment flexibility and environment consistency.
+- **Live Server Environment**: Features a live server setup for real-time testing and iteration, improving development speed and quality.
+
+These features represent a leap forward in streamlining the development process, from conception to deployment.
+
+## Contributions
+
+We invite the community to contribute to *Agentcy* by reporting issues, submitting pull requests, and improving the documentation. Any contribution that advances the project and makes the automation of software development more accessible is welcome.
+
+---
