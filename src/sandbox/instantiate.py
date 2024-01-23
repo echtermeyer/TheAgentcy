@@ -97,10 +97,10 @@ class PythonSandbox(Sandbox):
         dockerfile_str = (
             "FROM python:3.9-slim\n"
             "WORKDIR /app\n"
-            f"COPY . /app\n"
             f"EXPOSE {port}\n"
             f"RUN pip install --no-cache-dir wheel\n"
             f"RUN pip install --no-cache-dir {' '.join(dependencies)}\n"
+            f"COPY . /app\n"
             f'CMD ["python", "{script_name}"]\n'
         )
         return BytesIO(dockerfile_str.encode("utf-8"))
@@ -127,7 +127,7 @@ class PythonSandbox(Sandbox):
         file_path = write_str_to_file(
             fulltext_python_code, self.directory_path / "index.py"
         )
-        running_container = execute_code(
+        running_container_id = execute_code(
             file_path,
             self.image_name,
             self.container_name,
@@ -135,19 +135,33 @@ class PythonSandbox(Sandbox):
             dependencies,
             port,
         )
-        # Wait until the container is either running or has exited
+        # Obtain the Docker container object using the container ID
+        client = docker.from_env()
         try:
+            running_container = client.containers.get(running_container_id)
+
+            # Wait until the container is either running or has exited
             while True:
                 running_container.reload()  # Refresh the container data
                 container_status = running_container.attrs["State"]["Status"]
                 if container_status != "created":
                     break
-                time.sleep(1)  # Wait for a second before checking again
-        except Exception as e:
-            print(e)
-        time.sleep(5) # wait for logs to arrive
-        return running_container
+                time.sleep(0.5)  # Wait for a half-second before checking again
 
+            # Wait for logs or 5 seconds
+            start_time = time.time()
+            while True:
+                logs = running_container.logs(tail=10).decode('utf-8')
+                if logs != '':
+                    break  # Logs are available
+                if time.time() - start_time > 5:
+                    break  # 5 seconds have passed
+                time.sleep(0.1)  # Short pause to prevent high CPU usage
+
+            return running_container
+
+        finally:
+            client.close()
 
 class FrontendSandbox(Sandbox):
     """""
@@ -185,8 +199,8 @@ class FrontendSandbox(Sandbox):
         """
         dockerfile_str = (
             "FROM nginx:alpine\n"
-            f"COPY . .\n"
             f"EXPOSE {port}\n"
+            f"COPY . .\n"
             f'CMD ["nginx", "-g", "daemon off;"]\n'
         )
 
@@ -211,7 +225,7 @@ class FrontendSandbox(Sandbox):
         file_path = write_str_to_file(
             fulltext_html_code, self.directory_path / "index.html"
         )
-        running_container = execute_code(
+        running_container_id = execute_code(
             file_path,
             self.image_name,
             self.container_name,
@@ -220,15 +234,23 @@ class FrontendSandbox(Sandbox):
             port=self.port,
         )
 
-        # Wait until the container is either running or has exited
-        while True:
-            running_container.reload()  # Refresh the container data
-            container_status = running_container.attrs["State"]["Status"]
-            if container_status != "created":
-                break
-            time.sleep(1)  # Wait for a second before checking again
+        # Obtain the Docker container object using the container ID
+        client = docker.from_env()
+        try:
+            running_container = client.containers.get(running_container_id)
 
-        return running_container
+            # Wait until the container is either running or has exited
+            while True:
+                running_container.reload()  # Refresh the container data
+                container_status = running_container.attrs["State"]["Status"]
+                if container_status != "created":
+                    break
+                time.sleep(0.2)  # Wait for a half-second before checking again
+
+            return running_container
+
+        finally:
+            client.close()
 
 
 class DatabaseSandbox(Sandbox):
@@ -311,7 +333,7 @@ class DatabaseSandbox(Sandbox):
                 "This is only the instantiation file, there is no code parsed yet.",
                 self.directory_path / "INFO.md",
             )
-            running_container = execute_code(
+            running_container_id = execute_code(
                 file_path,
                 self.image_name,
                 self.container_name,
@@ -322,14 +344,20 @@ class DatabaseSandbox(Sandbox):
         except Exception as e:
             return f"error when creating database, Error: {str(e)} or also {running_container}"
         # Wait until the container is either running or has exited
-        while True:
-            try:
+        # Obtain the Docker container object using the container ID
+        client = docker.from_env()
+        try:
+            running_container = client.containers.get(running_container_id)
+
+            # Wait until the container is either running or has exited
+            while True:
                 running_container.reload()  # Refresh the container data
                 container_status = running_container.attrs["State"]["Status"]
                 if container_status != "created":
                     break
-                time.sleep(1)  # Wait for a second before checking again
-            except Exception as e:
-                return f"error when checking container, Error: {str(e)} or also {running_container}"
+                time.sleep(0.2)  # Wait for a half-second before checking again
 
-        return running_container
+            return running_container
+
+        finally:
+            client.close()

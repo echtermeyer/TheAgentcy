@@ -1,4 +1,5 @@
 from io import BytesIO
+import subprocess
 import docker
 import os
 import re
@@ -44,7 +45,7 @@ def execute_code(input_data: str,
                  container_name: str,
                  dockerfile_method: callable, 
                  dependencies: Set[str],
-                 port: str) -> Any:
+                 port: str) -> str:
     """
     Executes a script in a Docker container.
 
@@ -52,7 +53,7 @@ def execute_code(input_data: str,
         input_data (str): The script as a string or a path to the script file.
 
     Returns:
-        Any: The Docker container object or an error message.
+        str: The Docker container_id string.
     """
     try:
         workspace_folder, script_name, script_string = prepare_script_workspace(input_data)
@@ -72,16 +73,15 @@ def execute_code(input_data: str,
         remove_existing_container_and_image(client, container_name, image_tag)
 
         # Build and run the Docker image
-        container = build_and_run_container(client=client,
-                                            workspace_folder=workspace_folder,
+        container_id = build_and_run_container(workspace_folder=workspace_folder,
                                             dockerfile_bytes=dockerfile_bytes, 
                                             container_name=container_name,
                                             image_tag=image_tag,
                                             port=port)
         
-        logging.info(f"Container {container.name} started successfully.")
+        logging.info(f"Container {container_id} started successfully.")
 
-        return container
+        return container_id
 
     except Exception as e:
         logging.error(f"Error in execute_code: {str(e)}")
@@ -169,18 +169,16 @@ def remove_existing_container_and_image(client: docker.DockerClient, container_n
     except Exception as e:
         logging.error(f"General error in removing container or image: {str(e)}")
 
-def build_and_run_container(client: docker.DockerClient, 
-                            workspace_folder: str, 
+def build_and_run_container(workspace_folder: str, 
                             dockerfile_bytes: BytesIO, 
                             image_tag: str, 
                             port: str, 
                             network_name: str = "Agentcy", 
-                            container_name: str = None) -> docker.models.containers.Container:
+                            container_name: str = None):
     """
     Builds and runs a Docker container on a specified network.
 
     Args:
-        client (docker.DockerClient): The Docker client instance.
         workspace_folder (str): The workspace folder path.
         dockerfile_bytes (BytesIO): The Dockerfile as a BytesIO object.
         image_tag (str): The tag for the Docker image.
@@ -189,33 +187,36 @@ def build_and_run_container(client: docker.DockerClient,
         container_name (str, optional): The name of the Docker container. Defaults to None.
 
     Returns:
-        docker.models.containers.Container: The Docker container object.
+        The container ID on success, None on failure.
     """
-    # Check if the network exists, if not, create it
-    networks = client.networks.list(names=[network_name])
-    if not networks:
-        client.networks.create(network_name, driver="bridge")
+    try:
+        # Write the Dockerfile bytes to a file
+        dockerfile_path = os.path.join(workspace_folder, "Dockerfile")
+        with open(dockerfile_path, "wb") as dockerfile:
+            dockerfile.write(dockerfile_bytes.getvalue())
 
-    # Build the image
-    image, build_logs = client.images.build(
-        path=workspace_folder,
-        fileobj=dockerfile_bytes,
-        rm=True,
-        tag=image_tag,
-        quiet=True,
-    )
+        # Check if the network exists, if not, create it
+        networks_command = ["docker", "network", "ls", "--format", "{{.Name}}"]
+        networks = subprocess.check_output(networks_command).decode().splitlines()
+        if network_name not in networks:
+            subprocess.run(["docker", "network", "create", network_name], check=True)
 
-    # Run the container
-    container = client.containers.run(
-        image.id,
-        ports={f"{port}/tcp": int(port)},
-        volumes={os.path.abspath(workspace_folder): {'bind': '/usr/share/nginx/html/'}},
-        working_dir='/usr/share/nginx/html/',
-        network=network_name,
-        name=container_name,  # This line sets the container name
-        stderr=True,
-        stdout=True,
-        detach=True,
-    )
+        # Build the image
+        subprocess.run(["docker", "build", "-t", image_tag, workspace_folder], check=True)
 
-    return container
+        # Run the container
+        run_command = [
+            "docker", "run", "-d", "--name", container_name or "",
+            "-p", f"{port}:{port}",
+            "-v", f"{os.path.abspath(workspace_folder)}:/usr/share/nginx/html/",
+            "-w", "/usr/share/nginx/html/",
+            "--network", network_name,
+            image_tag
+        ]
+        container_id = subprocess.check_output(run_command).decode().strip()
+
+        return container_id
+
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred: {e}. Please make sure Docker Daemon is installed and running.")
+        return None
