@@ -19,7 +19,7 @@ class Pipeline(QObject):
     message_signal = Signal(str, str, bool)  # For communication with GUI thread
     animation_signal = Signal(str)  # layer, status, on/off
 
-    def __init__(self, command_line_args, evaluate: bool = False):
+    def __init__(self, command_line_args, evaluate_index: int=None):
         super().__init__()
         self._input = None
         self._pause_execution = False
@@ -28,7 +28,7 @@ class Pipeline(QObject):
         self.description = command_line_args.description
         self.fast_forward = command_line_args.fast_forward
         self.disable_gui = command_line_args.disable_gui
-        self.evaulate = evaluate
+        self.evaluate_index = evaluate_index
 
         self.__metrics = self.__setup_metrics()
         self.__setup_agents()
@@ -72,10 +72,7 @@ class Pipeline(QObject):
                 ),
             )
 
-    def __setup_metrics(self) -> dict:
-        if self.evaulate:
-            random.seed(0)
-            
+    def __setup_metrics(self) -> dict:            
         return {
             "project_name": None,
             "time": 0,
@@ -130,10 +127,14 @@ class Pipeline(QObject):
             self.title = self.__create_project_name()  # TODO: Use real project title
         else:
             # Randomly select a predefined use case and add it to the memory of the orchestrator if fast forward is enabled
-            with open(self.root / "src/setup/summaries.json") as file:
+            with open(self.root / "src/setup/summaries_eval.json") as file:
                 summaries = json.load(file)
 
-            summary_key = random.choice(list(summaries.keys()))
+            if self.evaluate_index is None:
+                summary_key = random.choice(list(summaries.keys()))
+            else:
+                summary_key = list(summaries.keys())[self.evaluate_index]
+
             self.__add_metrics("project_name", summary_key)
             self.title = self.__create_project_name(summary_key)
 
@@ -265,7 +266,8 @@ class Pipeline(QObject):
             )
             self.__transmit_animation_signal(f"{tester.name} is typing")
             # Vision takes up about 5100 tokens. Current limit is 10_000 tokens per minute, so we can use it just once.
-            use_vision = True if layer == "frontend" and turn == 0 else False
+            # use_vision = True if layer == "frontend" and turn == 0 else False
+            use_vision = False
             tester_message = tester.answer(tester_query, use_vision=use_vision)
             tester_dict = parse_message(tester_message, tester.parser)
 

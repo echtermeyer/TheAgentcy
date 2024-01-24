@@ -1,0 +1,93 @@
+[
+  {
+    "project_name": "AnnaTomWedding",
+    "time": 217,
+    "turns_database": 2,
+    "turns_backend": 2,
+    "turns_frontend": 2,
+    "working": 0,
+    "human_feedback": 4.75
+  },
+  {
+    "project_name": "CityCuts",
+    "time": 225,
+    "turns_database": 1,
+    "turns_backend": 2,
+    "turns_frontend": 2,
+    "working": 0,
+    "human_feedback": 3
+  },
+  {
+    "project_name": "QuickPoll",
+    "time": 315,
+    "turns_database": 1,
+    "turns_backend": 2,
+    "turns_frontend": 3,
+    "working": 0,
+    "human_feedback": 1.75
+  },
+  {
+    "project_name": "VoiceBox",
+    "time": 355,
+    "turns_database": 1,
+    "turns_backend": 2,
+    "turns_frontend": 4,
+    "working": 0,
+    "human_feedback": 3.25
+  },
+  {
+    "project_name": "SafeNeighborhood",
+    "time": 303,
+    "turns_database": 1,
+    "turns_backend": 3,
+    "turns_frontend": 3,
+    "working": 0,
+    "human_feedback": 3.75
+  },
+  {
+    "project_name": "PawsClaws",
+    "time": 435,
+    "turns_database": 2,
+    "turns_backend": 2,
+    "turns_frontend": 4,
+    "working": 0,
+    "human_feedback": 3.25
+  },
+  {
+    "project_name": "BookBuddies",
+    "time": 0,
+    "turns_database": 1,
+    "turns_backend": 2,
+    "turns_frontend": 0,
+    "working": 0,
+    "human_feedback": 1.75
+  },
+  {
+    "project_name": "FitnessFinder",
+    "time": 468,
+    "turns_database": 1,
+    "turns_backend": 7,
+    "turns_frontend": 3,
+    "working": 0,
+    "human_feedback": 2.75
+  },
+  {
+    "project_name": "LocalLore",
+    "time": 0,
+    "turns_database": 2,
+    "turns_backend": 0,
+    "turns_frontend": 0,
+    "working": 0,
+    "human_feedback": 1
+  },
+
+  {
+    "project_name": "SneakerFreak",
+    "time": 346,
+    "turns_database": 1,
+    "turns_backend": 3,
+    "turns_frontend": 7,
+    "working": 0,
+    "human_feedback": 2.75
+  }
+]
