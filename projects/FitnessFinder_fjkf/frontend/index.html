@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fitness Activities</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    input, select {
+      margin: 10px 0;
+      padding: 8px;
+      width: 300px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #activityDetails {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fitness Activities</h1>
+  <form id="createActivityForm">
+    <input type="text" id="activityName" placeholder="Activity Name" required>
+    <input type="date" id="activityDate" required>
+    <select id="locationId" required>
+      <option value="1">Gym</option>
+      <option value="2">Park</option>
+      <option value="3">Beach</option>
+      <option value="4">Stadium</option>
+      <option value="5">Yoga Studio</option>
+    </select>
+    <input type="number" id="userId" placeholder="Your User ID" required>
+    <button type="submit">Create Activity</button>
+  </form>
+  <div id="activityDetails"></div>
+
+  <script>
+    document.getElementById('createActivityForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const activityName = document.getElementById('activityName').value;
+      const activityDate = document.getElementById('activityDate').value;
+      const locationId = document.getElementById('locationId').value;
+      const userId = document.getElementById('userId').value;
+
+      fetch('http://localhost:8000/activities/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          activity_name: activityName,
+          activity_date: activityDate,
+          location_id: locationId,
+          user_id: userId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('activityDetails').innerText = JSON.stringify(data);
+      })
+      .catch(error => console.error('Error:', error));
+    });
+  </script>
+</body>
+</html>

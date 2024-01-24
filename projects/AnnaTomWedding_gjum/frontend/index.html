@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSVP Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    form {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    input[type="submit"] {
+      background-color: #4caf50;
+      color: white;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+    .response-message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <form id="rsvpForm">
+    <input type="text" id="guestName" placeholder="Enter your name" required>
+    <select id="mealChoice" required>
+      <option value="">Select a meal choice</option>
+      <option value="Vegetarian">Vegetarian</option>
+      <option value="Vegan">Vegan</option>
+      <option value="Gluten-Free">Gluten-Free</option>
+      <option value="Pescatarian">Pescatarian</option>
+      <option value="Omnivore">Omnivore</option>
+    </select>
+    <input type="submit" value="Submit RSVP">
+  </form>
+  <div id="responseMessage" class="response-message" style="display: none;"></div>
+
+  <script>
+    document.getElementById('rsvpForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const guestName = document.getElementById('guestName').value;
+      const mealChoice = document.getElementById('mealChoice').value;
+
+      fetch('http://localhost:8000/submit_rsvp/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ guest_name: guestName, meal_choice: mealChoice })
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('Failed to submit RSVP');
+        }
+      })
+      .then(data => {
+        document.getElementById('responseMessage').innerText = data.message;
+        document.getElementById('responseMessage').className = 'response-message success';
+        document.getElementById('responseMessage').style.display = 'block';
+      })
+      .catch(error => {
+        document.getElementById('responseMessage').innerText = error.message;
+        document.getElementById('responseMessage').className = 'response-message error';
+        document.getElementById('responseMessage').style.display = 'block';
+      });
+    });
+  </script>
+</body>
+</html>

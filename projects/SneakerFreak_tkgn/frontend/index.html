@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sneaker Pre-order</title>
+  <style>
+    /* Add your CSS styles here */
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sneaker Pre-order</h1>
+    <h2>Customer Information</h2>
+    <input type="text" id="firstName" placeholder="First Name">
+    <input type="text" id="lastName" placeholder="Last Name">
+    <input type="email" id="email" placeholder="Email">
+    <input type="tel" id="phoneNumber" placeholder="Phone Number">
+    <button onclick="createCustomer()">Create Customer</button>
+    <p id="customerMessage"></p>
+
+    <h2>Sneaker Selection</h2>
+    <select id="sneakerSelect">
+      <option value="1">Nike Air Max - Size 9</option>
+      <option value="2">Adidas Ultraboost - Size 10</option>
+      <option value="3">Puma RS-X - Size 8</option>
+      <option value="4">Reebok Classic - Size 11</option>
+      <option value="5">New Balance 574 - Size 7</option>
+    </select>
+    <button onclick="createPreOrder()">Pre-order Sneaker</button>
+    <p id="preOrderMessage"></p>
+
+    <h2>Create Sneaker</h2>
+    <input type="text" id="sneakerBrand" placeholder="Brand">
+    <input type="text" id="sneakerModel" placeholder="Model">
+    <input type="text" id="sneakerSize" placeholder="Size">
+    <input type="number" id="sneakerPrice" placeholder="Price">
+    <input type="number" id="inventoryQuantity" placeholder="Inventory Quantity">
+    <button onclick="createSneaker()">Create Sneaker</button>
+    <p id="sneakerMessage"></p>
+  </div>
+
+  <script>
+    // Add your JavaScript code here
+    let customerId; // Declare customerId with let within the appropriate scope
+
+    function createCustomer() {
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
+      const email = document.getElementById('email').value;
+      const phoneNumber = document.getElementById('phoneNumber').value;
+
+      // Make POST request to create customer
+      // Use fetch API to communicate with the backend
+      fetch('http://localhost:8000/customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          phone_number: phoneNumber
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('customerMessage').innerText = data.message;
+        // Retrieve the actual customer ID and store it for later use
+        customerId = data.customer_id;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+
+    function createPreOrder() {
+      const sneakerId = document.getElementById('sneakerSelect').value;
+      const orderDate = new Date().toISOString().split('T')[0];
+      const status = 'Pending';
+
+      // Make POST request to create pre-order
+      // Use fetch API to communicate with the backend
+      fetch('http://localhost:8000/preorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          customer_id: customerId,
+          sneaker_id: sneakerId,
+          order_date: orderDate,
+          status: status
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('preOrderMessage').innerText = data.message;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+
+    function createSneaker() {
+      const brand = document.getElementById('sneakerBrand').value;
+      const model = document.getElementById('sneakerModel').value;
+      const size = document.getElementById('sneakerSize').value;
+      const price = document.getElementById('sneakerPrice').value;
+      const inventoryQuantity = document.getElementById('inventoryQuantity').value;
+
+      // Make POST request to create sneaker
+      // Use fetch API to communicate with the backend
+      fetch('http://localhost:8000/sneaker', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          brand: brand,
+          model: model,
+          size: size,
+          price: price,
+          inventory_quantity: inventoryQuantity
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('sneakerMessage').innerText = data.message;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+  </script>
+</body>
+</html>

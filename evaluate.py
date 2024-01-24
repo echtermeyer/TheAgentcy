@@ -1,5 +1,6 @@
 import sys
 import json
+import time
 import argparse
 
 import pandas as pd
@@ -23,11 +24,15 @@ def evaluate(command_line_args):
         
         if command_line_args.disable_gui:
             metrics = []
-            for _ in range(command_line_args.iterations):
-                pipeline = Pipeline(command_line_args, evaluate=True)
-                pipeline.start()
+            for i in range(command_line_args.iterations):
+                pipeline = Pipeline(command_line_args, evaluate_index=i)
+                try:
+                    pipeline.start()
+                except Exception as e:
+                    print("Execution failed. Skipping this run. Error: ", e)
 
                 metrics.append(pipeline.metrics)
+                time.sleep(60)
 
             (ROOT / "evaluate").mkdir(parents=True, exist_ok=True)
             with open(ROOT / f"evaluate/{command_line_args.project}.json", "w+") as f:
@@ -69,7 +74,9 @@ def visualize_metrics(folder: Path):
         ),
         ax=ax_time,
     )
-    ax_time.set_title("Time")
+    ax_time.set_title("Average Execution Time per Model")
+    # ax_time.set_xlabel("Datasets")  # X-axis label
+    ax_time.set_ylabel("Time (secs)")  # Y-axis label
 
     # Human Feedback Boxplot
     ax_feedback = fig.add_subplot(gs[0, 1])
@@ -79,7 +86,9 @@ def visualize_metrics(folder: Path):
         ),
         ax=ax_feedback,
     )
-    ax_feedback.set_title("Human Feedback")
+    ax_feedback.set_title("Human Feedback per Model")
+    # ax_feedback.set_xlabel("Models")  # X-axis label
+    ax_feedback.set_ylabel("Feedback Score")  # Y-axis label
 
     # Linechart for turns spanning the width of both boxplots
     ax_linechart = fig.add_subplot(gs[1, :])
@@ -93,12 +102,16 @@ def visualize_metrics(folder: Path):
         line_labels = ["Database", "Backend", "Frontend"]
 
         sns.lineplot(x=line_labels, y=line_data, label=name, ax=ax_linechart)
-    ax_linechart.set_title("Turns LineChart for Different Layers")
+    ax_linechart.set_title("Average Test Iterations for Different Layers")
+    # ax_linechart.set_xlabel("System Component")  # X-axis label
+    ax_linechart.set_ylabel("Average Test Iterations")  # Y-axis label
     ax_linechart.legend()
 
     # Adjust layout
     plt.tight_layout()
+    plt.savefig("evaluate/evaluation.pdf")
     plt.show()
+
 
 
 if __name__ == "__main__":

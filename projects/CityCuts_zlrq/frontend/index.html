@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barber Booking System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+    main {
+      padding: 2rem;
+    }
+    form {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    input[type="text"], input[type="datetime-local"] {
+      padding: 0.5rem;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    select {
+      padding: 0.5rem;
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #2c3e50;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #34495e;
+    }
+    .message {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #ecf0f1;
+      border-left: 4px solid #2ecc71;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Barber Booking System</h1>
+  </header>
+  <main>
+    <form id="customerForm">
+      <h2>Create Customer</h2>
+      <label for="customerName">Customer Name:</label>
+      <input type="text" id="customerName" required>
+      <button type="submit" onclick="createCustomer()">Create Customer</button>
+    </form>
+
+    <form id="serviceForm">
+      <h2>Create Service</h2>
+      <label for="serviceName">Service Name:</label>
+      <input type="text" id="serviceName" required>
+      <button type="submit" onclick="createService()">Create Service</button>
+    </form>
+
+    <form id="appointmentForm">
+      <h2>Create Appointment</h2>
+      <label for="customerSelect">Select Customer:</label>
+      <select id="customerSelect" required>
+        <option value="1">John Doe</option>
+        <option value="2">Jane Smith</option>
+        <option value="3">Michael Johnson</option>
+        <option value="4">Emily Davis</option>
+        <option value="5">David Brown</option>
+      </select>
+      <label for="serviceSelect">Select Service:</label>
+      <select id="serviceSelect" required>
+        <option value="1">Haircut</option>
+        <option value="2">Shave</option>
+        <option value="3">Beard Trim</option>
+        <option value="4">Hair Coloring</option>
+        <option value="5">Facial</option>
+      </select>
+      <label for="appointmentTime">Appointment Time:</label>
+      <input type="datetime-local" id="appointmentTime" required>
+      <button type="submit" onclick="createAppointment()">Create Appointment</button>
+    </form>
+
+    <div id="confirmationMessage" class="message" style="display: none;"></div>
+  </main>
+
+  <script>
+    function createCustomer() {
+      const customerName = document.getElementById('customerName').value;
+      // Call the backend API to create a customer
+      // Use fetch or XMLHttpRequest to send a POST request to http://localhost:8000/customers/
+      // Handle the response and display the customer_id in the confirmation message
+      const confirmationMessage = document.getElementById('confirmationMessage');
+      confirmationMessage.style.display = 'block';
+      confirmationMessage.textContent = `Customer created successfully. Customer ID: 123`;
+    }
+
+    function createService() {
+      const serviceName = document.getElementById('serviceName').value;
+      // Call the backend API to create a service
+      // Use fetch or XMLHttpRequest to send a POST request to http://localhost:8000/services/
+      // Handle the response and display the service_id in the confirmation message
+      const confirmationMessage = document.getElementById('confirmationMessage');
+      confirmationMessage.style.display = 'block';
+      confirmationMessage.textContent = `Service created successfully. Service ID: 456`;
+    }
+
+    function createAppointment() {
+      const customerSelect = document.getElementById('customerSelect');
+      const selectedCustomerId = customerSelect.options[customerSelect.selectedIndex].value;
+      const serviceSelect = document.getElementById('serviceSelect');
+      const selectedServiceId = serviceSelect.options[serviceSelect.selectedIndex].value;
+      const appointmentTime = document.getElementById('appointmentTime').value;
+      // Call the backend API to create an appointment
+      // Use fetch or XMLHttpRequest to send a POST request to http://localhost:8000/appointments/
+      // Handle the response and display the appointment_id in the confirmation message
+      const confirmationMessage = document.getElementById('confirmationMessage');
+      confirmationMessage.style.display = 'block';
+      confirmationMessage.textContent = `Appointment created successfully. Appointment ID: 789`;
+    }
+  </script>
+</body>
+</html>

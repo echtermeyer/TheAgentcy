@@ -7,6 +7,9 @@ ROOT = Path(__file__).parent
 
 
 def start(command_line_args):
+    """
+    Only used if you want to start an already existing project. Does not work for new projects.
+    """
     folder = command_line_args.project_name
 
     print("Starting database container...")

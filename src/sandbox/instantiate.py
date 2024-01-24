@@ -151,7 +151,7 @@ class PythonSandbox(Sandbox):
             # Wait for logs or 5 seconds
             start_time = time.time()
             while True:
-                logs = running_container.logs(tail=10).decode('utf-8')
+                logs = running_container.logs(tail=10).decode("utf-8")
                 # if logs != '':  # <-- This logic doesnt work. Error logs come with a delay.
                 #     break  # Logs are available
                 if time.time() - start_time > 5:
@@ -162,6 +162,7 @@ class PythonSandbox(Sandbox):
 
         finally:
             client.close()
+
 
 class FrontendSandbox(Sandbox):
     """""

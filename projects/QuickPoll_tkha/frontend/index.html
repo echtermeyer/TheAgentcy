@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Poll</title>
+  <style>
+    /* Add your CSS styles here */
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .poll-question {
+      margin-bottom: 20px;
+    }
+    .response-list {
+      list-style: none;
+      padding: 0;
+    }
+    .response-list li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Weekly Poll</h1>
+  <div class="poll-question">
+    <h2>Question of the Week</h2>
+    <p id="question-text">Loading question...</p>
+    <select id="employee-list">
+      <option value="">Select Your Name</option>
+      <!-- Employee names will be dynamically populated here -->
+    </select>
+    <input type="text" id="response-text" placeholder="Your Response">
+    <button onclick="submitResponse()">Submit Response</button>
+  </div>
+  <div class="poll-results">
+    <h2>Poll Results</h2>
+    <ul class="response-list" id="response-list">
+      <!-- Poll responses will be dynamically populated here -->
+    </ul>
+  </div>
+
+  <script>
+    // Add your JavaScript code here
+    // Fetch the poll question
+    fetch('http://localhost:8000/polls/')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('question-text').innerText = data.question_text;
+      });
+
+    // Fetch the employee list
+    fetch('http://localhost:8000/employees/')
+      .then(response => response.json())
+      .then(data => {
+        const employeeList = document.getElementById('employee-list');
+        data.forEach(employee => {
+          const option = document.createElement('option');
+          option.value = employee.employee_id;
+          option.textContent = `${employee.first_name} ${employee.last_name}`;
+          employeeList.appendChild(option);
+        });
+      });
+
+    // Function to submit poll response
+    function submitResponse() {
+      const employeeId = document.getElementById('employee-list').value;
+      const questionId = 1; // Replace with the actual question id
+      const responseText = document.getElementById('response-text').value;
+
+      fetch('http://localhost:8000/polls/responses/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employee_id: employeeId,
+          question_id: questionId,
+          response_text: responseText,
+        }),
+      })
+      .then(() => {
+        // Clear the response input
+        document.getElementById('response-text').value = '';
+        // Refresh the poll results
+        fetchPollResponses(questionId);
+      });
+    }
+
+    // Function to fetch and display poll responses
+    function fetchPollResponses(questionId) {
+      fetch(`http://localhost:8000/polls/responses/${questionId}`)
+        .then(response => response.json())
+        .then(data => {
+          const responseList = document.getElementById('response-list');
+          responseList.innerHTML = ''; // Clear previous responses
+          data.forEach(response => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${response.employee_id}: ${response.response_text}`;
+            responseList.appendChild(listItem);
+          });
+        });
+    }
+
+    // Initial fetch of poll responses
+    fetchPollResponses(1); // Replace with the actual question id
+  </script>
+</body>
+</html>

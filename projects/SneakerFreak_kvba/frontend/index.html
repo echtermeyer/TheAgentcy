@@ -1,0 +1,66 @@
+/css/javascript
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sneaker Pre-Order</title>
+  <style>
+    /* Add your CSS styles here */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    .sneaker-highlight {
+      background-color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Available Sneakers</h1>
+  <div>
+    <label for="sneakerSelect">Select a Sneaker:</label>
+    <select id="sneakerSelect">
+      <option value="1">Nike Air Max 90</option>
+      <option value="2">Adidas Ultraboost</option>
+      <option value="3">New Balance 990v5</option>
+      <option value="4">Puma RS-X</option>
+      <option value="5">Reebok Classic Leather</option>
+    </select>
+    <button onclick="placePreOrder()">Pre-Order Now</button>
+  </div>
+
+  <h2>Pre-Order Confirmation</h2>
+  <div id="confirmationMessage"></div>
+
+  <script>
+    // Add your JavaScript code here
+    function placePreOrder() {
+      const sneakerId = document.getElementById('sneakerSelect').value;
+      // Make a POST request to the backend API to place a pre-order using the selected sneakerId
+      // Placeholder for backend API endpoint
+      // Replace 'https://backend-api.com/preorder' with the actual endpoint when implemented
+      fetch('https://backend-api.com/preorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sneakerId: sneakerId }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        confirmationMessage.innerHTML = `Your pre-order for ${data.sneakerName} has been placed!`;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+  </script>
+</body>
+</html>

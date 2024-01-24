@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Story Viewer</h1>
+    <form id="createStoryForm">
+        <h2>Create a New Story</h2>
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required>
+        <label for="theme">Theme:</label>
+        <select id="theme" name="theme" required>
+            <option value="Adventure">Adventure</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Romance">Romance</option>
+            <option value="Fantasy">Fantasy</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+        </select>
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" rows="4" required></textarea>
+        <button type="submit" onclick="createStory()">Submit</button>
+    </form>
+
+    <div id="storyDetails">
+        <h2>Story Details</h2>
+        <label for="storyId">Enter Story ID:</label>
+        <input type="text" id="storyId" name="storyId">
+        <button onclick="getStoryDetails()" id="getStoryButton">Get Story</button>
+        <div id="storyContent"></div>
+    </div>
+
+    <script>
+        function createStory() {
+            const location = document.getElementById('location').value;
+            const theme = document.getElementById('theme').value;
+            const content = document.getElementById('content').value;
+
+            // Make POST request to create a new story
+            // Use fetch API to send data to the backend
+            fetch('http://localhost:8000/stories/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ location, theme, content }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to create story');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('New story created successfully!');
+                console.log(data);
+            })
+            .catch(error => {
+                alert('Error: Failed to create story');
+                console.error('Error:', error);
+            });
+        }
+
+        function getStoryDetails() {
+            const storyId = document.getElementById('storyId').value;
+
+            if (storyId.trim() === '') {
+                alert('Please enter a valid Story ID');
+                return;
+            }
+
+            // Make GET request to retrieve story details
+            // Use fetch API to get data from the backend
+            fetch(`http://localhost:8000/stories/${storyId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Story not found');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const storyContent = document.getElementById('storyContent');
+                storyContent.innerHTML = `
+                    <p><strong>Location:</strong> ${data.location}</p>
+                    <p><strong>Theme:</strong> ${data.theme}</p>
+                    <p><strong>Content:</strong> ${data.content}</p>
+                `;
+            })
+            .catch(error => {
+                alert('Error: Story not found');
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
