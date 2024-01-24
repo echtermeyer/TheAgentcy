@@ -34,8 +34,8 @@ class Pipeline(QObject):
         self.__setup_agents()
 
     def __transmit_message_signal(self, sender, message, is_question=False):
+        print(f"\033[34m{sender}:\033[0m {message}")
         if self.disable_gui:
-            print(f"\033[34m{sender}:\033[0m {message}")
             if is_question:
                 terminal_input = input("\033[34mYour answer: \033[0m ")
                 return terminal_input
@@ -50,10 +50,8 @@ class Pipeline(QObject):
             return self._input
 
     def __transmit_animation_signal(self, text):
-        if self.disable_gui:
-            print(f"\033[34mstatus\033[0m")
-        else:
-            self.animation_signal.emit(text)
+        print(f"\033[32m{text}\033[0m") # green formatting
+        self.animation_signal.emit(text)
 
     def receive_from_gui(self, input):
         self._input = input
@@ -97,7 +95,10 @@ class Pipeline(QObject):
 
     def __create_project_name(self, title: str = "Webapp") -> str:
         # Append 4 random chars at the end of the title, seperated by _
-        return title + "_" + "".join(random.choices(string.ascii_lowercase, k=4))
+        project_name = title + "_" + "".join(random.choices(string.ascii_lowercase, k=4))
+        print(f"\033[38;5;208m{'This project will be saved under: /projects/' + project_name}\033[0m")
+        self.project_name = project_name
+        return project_name
 
     def start(self) -> None:
         """Start developing process"""
@@ -200,7 +201,7 @@ class Pipeline(QObject):
         developer_followup = developer.get_prompt_text("followup")
         tester_followup = tester.get_prompt_text("followup")
 
-        for turn in range(5):
+        for turn in range(7):
             # If the backend tester didnt accept the backend code, reset the database container,
             # so that the amended backend code can be tested in a clean environment
             if turn != 0 and layer == "backend":
@@ -225,12 +226,12 @@ class Pipeline(QObject):
 
             # Send query to dev agent
             self.__transmit_animation_signal(f"{developer.name} is typing")
-            dev_code = developer.answer(dev_query, verbose=True)
+            dev_code = developer.answer(dev_query)
             dev_code = parse_message(dev_code, developer.parser)
             self.__transmit_message_signal(sender=developer.name, message=dev_code)
 
             # Execute code in docker container
-            docker_logs = ""
+            log_string = ""
             if layer != "database":
                 self.__transmit_animation_signal(f"Running code in {layer} container")
                 dependencies = (
@@ -241,17 +242,16 @@ class Pipeline(QObject):
                 timestamp_execution = int(
                     time.mktime(datetime.datetime.now().timetuple())
                 )
-                # TODO: AttributeError: 'str' object has no attribute 'logs'
                 docker_container = docker_sandbox.trigger_execution_pipeline(
                     dev_code, dependencies
                 )
 
-                prefix = "These are the last few log statements that one gets when running the code in a dedicated docker container:\n"
-                docker_logs = prefix + docker_container.logs(
+                docker_logs = docker_container.logs(
                     since=timestamp_execution, tail=10
                 ).decode("utf-8")
-                print("\n== DOCKER LOGS ==", docker_logs)
-
+                print(f"\033[38;5;208m{'Docker logs:\n'}\033[0m", docker_logs)
+                log_string = f"These are the last few log statements that one gets when running the code in a dedicated docker container:\n{docker_logs}"
+            
             # Send message, code and docker logs to tester agent
             # if layer is frontend, the tester need the documentation of the backend to check if the dev created one element for each api endpoint
             backend_docs = (
@@ -261,12 +261,12 @@ class Pipeline(QObject):
             )
 
             tester_query = tester_followup.format(
-                code=dev_code, docker_logs=docker_logs, backend_docs=backend_docs
+                code=dev_code, docker_logs=log_string, backend_docs=backend_docs
             )
             self.__transmit_animation_signal(f"{tester.name} is typing")
             # Vision takes up about 5100 tokens. Current limit is 10_000 tokens per minute, so we can use it just once.
             use_vision = True if layer == "frontend" and turn == 0 else False
-            tester_message = tester.answer(tester_query, use_vision=use_vision, verbose=True)
+            tester_message = tester.answer(tester_query, use_vision=use_vision)
             tester_dict = parse_message(tester_message, tester.parser)
 
             # Handle error that results from testers not providing a text field in their response

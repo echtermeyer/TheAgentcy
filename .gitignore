@@ -1,10 +1,10 @@
 .vscode/
 .env
 projects/
+TO_BE_FIXED/
 
 # Stuff that I need to replace poetry
 .my_venv/
-requirements.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

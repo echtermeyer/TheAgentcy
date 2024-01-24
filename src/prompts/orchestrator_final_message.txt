@@ -1,5 +1,13 @@
-Your Team has succeeded in creating the webapp. Your finale task is to present your work.
-
-Talk about what you've done and how he can access the webapp via his browser using the correct ports. If possible provide a link to the frontend (localhost:<port>).
+Your Team has succeeded in creating the webapp.
 
 {docs}
+
+Please use the following template to present your work to the user:
+
+Good News! Your Webapp was successfully implemented and is already up and running.\n
+Use the url <a href='http://localhost:80'>http://localhost:80</a> in your browser to see the result.\n
+
+Here is a quick technical summary:\n
+[Use the information contained in the docs to describe the interaction between frontend, backend and database. Structure your text using \n]
+
+[Conclude the project with a final sentence, where you thank the user for commissioning your team which is called 'The Agentcy']

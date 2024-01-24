@@ -300,6 +300,7 @@ class ChatMessageWidget(QWidget):
 
         # Text Label
         self.text_label = QLabel(self)
+        self.text_label.setOpenExternalLinks(True)
         formatted_message = self.__add_formatting(sender, message)
         self.text_label.setText(f"<b>{sender}</b>: {formatted_message}")
         self.text_label.setWordWrap(True)
