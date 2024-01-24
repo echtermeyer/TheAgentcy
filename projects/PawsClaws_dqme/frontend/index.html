@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adoption Application Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label {
+      margin-bottom: 10px;
+      display: block;
+    }
+    input, select {
+      margin-bottom: 10px;
+      padding: 5px;
+      width: 200px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Adoption Application Form</h1>
+  <form id="adoptionForm">
+    <label for="applicantName">Applicant Name:</label>
+    <input type="text" id="applicantName" required>
+    <label for="applicantEmail">Applicant Email:</label>
+    <input type="email" id="applicantEmail" required>
+    <label for="preferredPetType">Preferred Pet Type:</label>
+    <select id="preferredPetType">
+      <option value="Golden Retriever">Golden Retriever</option>
+      <option value="Siamese Cat">Siamese Cat</option>
+      <option value="Labrador Retriever">Labrador Retriever</option>
+      <option value="Persian Cat">Persian Cat</option>
+      <option value="German Shepherd">German Shepherd</option>
+    </select>
+    <button type="submit">Submit Application</button>
+  </form>
+  <div id="confirmationMessage"></div>
+
+  <script>
+    document.getElementById('adoptionForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const requestData = {
+        applicant_name: formData.get('applicantName'),
+        applicant_email: formData.get('applicantEmail'),
+        preferred_pet_type: formData.get('preferredPetType')
+      };
+      fetch('http://localhost:8000/submit_application', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('confirmationMessage').innerText = data.message;
+      })
+      .catch(error => {
+        document.getElementById('confirmationMessage').innerText = 'Error submitting application';
+      });
+    });
+  </script>
+</body>
+</html>

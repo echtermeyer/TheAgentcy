@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Club</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    input[type="text"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to the Book Club</h1>
+  <form id="registerForm">
+    <h2>Register Member</h2>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    <label for="email">Email:</label>
+    <input type="text" id="email" name="email" required>
+    <label for="password">Password:</label>
+    <input type="text" id="password" name="password" required>
+    <label for="joinDate">Join Date:</label>
+    <input type="date" id="joinDate" name="joinDate" required>
+    <button type="button" onclick="registerMember()">Register</button>
+  </form>
+
+  <form id="suggestBookForm">
+    <h2>Suggest Book</h2>
+    <label for="memberId">Member ID:</label>
+    <input type="text" id="memberId" name="memberId" required>
+    <label for="bookTitle">Book Title:</label>
+    <input type="text" id="bookTitle" name="bookTitle" required>
+    <label for="author">Author:</label>
+    <input type="text" id="author" name="author" required>
+    <label for="suggestedDate">Suggested Date:</label>
+    <input type="date" id="suggestedDate" name="suggestedDate" required>
+    <button type="button" onclick="suggestBook()">Suggest</button>
+  </form>
+
+  <form id="voteMonthlyPickForm">
+    <h2>Vote Monthly Pick</h2>
+    <label for="pickId">Pick ID:</label>
+    <input type="text" id="pickId" name="pickId" required>
+    <button type="button" onclick="voteMonthlyPick()">Vote</button>
+  </form>
+
+  <div id="monthlyPicks">
+    <h2>Monthly Picks</h2>
+    <button type="button" onclick="getMonthlyPicks()">Get Monthly Picks</button>
+    <div id="monthlyPicksResult" class="result"></div>
+  </div>
+
+  <script>
+    function registerMember() {
+      const form = document.getElementById('registerForm');
+      const formData = new FormData(form);
+      fetch('http://localhost:8000/register', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Display the result in the result div
+      })
+      .catch(error => console.error('Error:', error));
+    }
+
+    function suggestBook() {
+      const form = document.getElementById('suggestBookForm');
+      const formData = new FormData(form);
+      fetch('http://localhost:8000/suggest-book', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Display the result in the result div
+      })
+      .catch(error => console.error('Error:', error));
+    }
+
+    function voteMonthlyPick() {
+      const form = document.getElementById('voteMonthlyPickForm');
+      const formData = new FormData(form);
+      fetch('http://localhost:8000/vote-monthly-pick', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Display the result in the result div
+      })
+      .catch(error => console.error('Error:', error));
+    }
+
+    function getMonthlyPicks() {
+      fetch('http://localhost:8000/get-monthly-picks')
+      .then(response => response.json())
+      .then(data => {
+        const monthlyPicksResult = document.getElementById('monthlyPicksResult');
+        // Display the result in the monthlyPicksResult div
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
+</body>
+</html>

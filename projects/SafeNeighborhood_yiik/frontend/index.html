@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Contact Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input {
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>User Registration</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <input type="email" id="email" placeholder="Email">
+  <button onclick="registerUser()">Register</button>
+
+  <h2>Add Emergency Contact</h2>
+  <input type="text" id="contactName" placeholder="Contact Name">
+  <input type="tel" id="contactNumber" placeholder="Contact Number">
+  <button onclick="addEmergencyContact()">Add Contact</button>
+
+  <h2>Get Emergency Contacts</h2>
+  <select id="userSelect">
+    <option value="1">User 1</option>
+    <option value="2">User 2</option>
+    <option value="3">User 3</option>
+    <option value="4">User 4</option>
+    <option value="5">User 5</option>
+  </select>
+  <button onclick="getEmergencyContacts()">Get Contacts</button>
+
+  <div id="output"></div>
+
+  <script>
+    function registerUser() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const email = document.getElementById('email').value;
+
+      fetch('http://localhost:8000/register_user/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password, email }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to register user');
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('output').innerText = `User Registered: ${data.username}, ${data.email}`;
+      })
+      .catch(error => {
+        document.getElementById('output').innerText = `Error: ${error.message}`;
+      });
+    }
+
+    function addEmergencyContact() {
+      const userId = 1; // Replace with actual user id
+      const contactName = document.getElementById('contactName').value;
+      const contactNumber = document.getElementById('contactNumber').value;
+
+      fetch('http://localhost:8000/add_emergency_contact/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId, contact_name: contactName, contact_number: contactNumber }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to add emergency contact');
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('output').innerText = `Emergency Contact Added: ${data.contact_name}, ${data.contact_number}`;
+      })
+      .catch(error => {
+        document.getElementById('output').innerText = `Error: ${error.message}`;
+      });
+    }
+
+    function getEmergencyContacts() {
+      const userId = document.getElementById('userSelect').value;
+
+      fetch(`http://localhost:8000/get_emergency_contacts/${userId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to get emergency contacts');
+        }
+        return response.json();
+      })
+      .then(data => {
+        let output = '<h3>Emergency Contacts</h3>';
+        data.forEach(contact => {
+          output += `<p>Name: ${contact.contact_name}, Number: ${contact.contact_number}</p>`;
+        });
+        document.getElementById('output').innerHTML = output;
+      })
+      .catch(error => {
+        document.getElementById('output').innerText = `Error: ${error.message}`;
+      });
+    }
+  </script>
+</body>
+</html>

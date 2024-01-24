@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adoption Application Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label {
+      margin-bottom: 5px;
+      display: block;
+    }
+    input, select {
+      margin-bottom: 10px;
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>Adoption Application Form</h2>
+  <form id="adoptionForm">
+    <label for="firstName">First Name:</label>
+    <input type="text" id="firstName" name="firstName" required>
+    <label for="lastName">Last Name:</label>
+    <input type="text" id="lastName" name="lastName" required>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+    <label for="phoneNumber">Phone Number:</label>
+    <input type="text" id="phoneNumber" name="phoneNumber" required>
+    <label for="address">Address:</label>
+    <input type="text" id="address" name="address" required>
+    <label for="petType">Preferred Pet Type:</label>
+    <select id="petType" name="petType" required>
+      <option value="Golden Retriever">Golden Retriever</option>
+      <option value="Siamese Cat">Siamese Cat</option>
+      <option value="Labrador Retriever">Labrador Retriever</option>
+      <option value="Persian Cat">Persian Cat</option>
+      <option value="German Shepherd">German Shepherd</option>
+    </select>
+    <label for="petBreed">Preferred Pet Breed:</label>
+    <input type="text" id="petBreed" name="petBreed" required>
+    <label for="petAge">Preferred Pet Age:</label>
+    <input type="number" id="petAge" name="petAge" required>
+    <button type="submit">Submit Application</button>
+    <label for="applicantId">Applicant ID:</label>
+    <input type="text" id="applicantId" name="applicantId" required>
+    <button type="button" id="getApplicantBtn">Get Applicant Details</button>
+    <button type="button" id="deleteApplicationBtn">Delete Application</button>
+  </form>
+
+  <div id="submissionMessage"></div>
+  <div id="applicantDetails"></div>
+  <div id="deleteMessage"></div>
+
+  <script>
+    document.getElementById('adoptionForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const requestData = {
+        applicant_data: {
+          first_name: formData.get('firstName'),
+          last_name: formData.get('lastName'),
+          email: formData.get('email'),
+          phone_number: formData.get('phoneNumber'),
+          address: formData.get('address')
+        },
+        pet_preference_data: {
+          pet_type: formData.get('petType'),
+          pet_breed: formData.get('petBreed'),
+          pet_age: parseInt(formData.get('petAge'))
+        }
+      };
+
+      fetch('http://localhost:8000/submit_application', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('submissionMessage').innerText = data.message;
+      })
+      .catch(error => {
+        document.getElementById('submissionMessage').innerText = 'Error submitting application';
+      });
+    });
+
+    document.getElementById('getApplicantBtn').addEventListener('click', function() {
+      const applicantId = document.getElementById('applicantId').value;
+      fetch(`http://localhost:8000/get_applicant/${applicantId}`)
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('applicantDetails').innerText = JSON.stringify(data);
+      })
+      .catch(error => {
+        document.getElementById('applicantDetails').innerText = 'Error getting applicant details';
+      });
+    });
+
+    document.getElementById('deleteApplicationBtn').addEventListener('click', function() {
+      const applicantId = document.getElementById('applicantId').value;
+      fetch(`http://localhost:8000/delete_application/${applicantId}`, {
+        method: 'DELETE'
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('deleteMessage').innerText = data.message;
+      })
+      .catch(error => {
+        document.getElementById('deleteMessage').innerText = 'Error deleting application';
+      });
+    });
+  </script>
+</body>
+</html>

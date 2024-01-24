@@ -1,0 +1,5 @@
+FROM postgres:latest
+ENV POSTGRES_USER=user
+ENV POSTGRES_PASSWORD=admin
+EXPOSE 5432
+CMD ["postgres"]

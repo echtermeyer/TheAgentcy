@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSVP Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label {
+      margin-bottom: 10px;
+      display: block;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .rsvpList {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>RSVP Form</h2>
+  <form id="rsvpForm">
+    <label for="guestName">Guest Name:</label>
+    <input type="text" id="guestName" required>
+    <label for="mealChoice">Meal Choice:</label>
+    <select id="mealChoice" required>
+      <option value="Vegetarian">Vegetarian</option>
+      <option value="Vegan">Vegan</option>
+      <option value="Gluten-free">Gluten-free</option>
+      <option value="Regular">Regular</option>
+      <option value="Other">Other</option>
+    </select>
+    <button type="submit">Submit RSVP</button>
+  </form>
+  <div id="confirmationMessage" class="message" style="display: none;"></div>
+  <div id="rsvpList" class="rsvpList"></div>
+  <div id="rsvpLog" class="rsvpList"></div>
+
+  <script>
+    document.getElementById('rsvpForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const guestName = document.getElementById('guestName').value;
+      const mealChoice = document.getElementById('mealChoice').value;
+
+      fetch('http://localhost:8000/submit_rsvp/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ guest_name: guestName, meal_choice: mealChoice })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        confirmationMessage.textContent = data.message;
+        confirmationMessage.style.display = 'block';
+        // Get and display RSVPs
+        fetch('http://localhost:8000/get_rsvps/')
+          .then(response => response.json())
+          .then(rsvps => {
+            const rsvpList = document.getElementById('rsvpList');
+            rsvpList.innerHTML = '<h3>RSVP List</h3>';
+            rsvps.forEach(rsvp => {
+              const rsvpItem = document.createElement('div');
+              rsvpItem.textContent = `ID: ${rsvp.id}, Guest Name: ${rsvp.guest_name}, Meal Choice: ${rsvp.meal_choice}, Submission Date: ${rsvp.submission_date}`;
+              rsvpList.appendChild(rsvpItem);
+            });
+          })
+          .catch(error => console.error('Error:', error));
+        // Get and display RSVP Log
+        fetch('http://localhost:8000/get_rsvp_log/')
+          .then(response => response.json())
+          .then(rsvpLog => {
+            const rsvpLogList = document.getElementById('rsvpLog');
+            rsvpLogList.innerHTML = '<h3>RSVP Log</h3>';
+            rsvpLog.forEach(log => {
+              const logItem = document.createElement('div');
+              logItem.textContent = `ID: ${log.id}, Event Type: ${log.event_type}, Event Description: ${log.event_description}, Event Date: ${log.event_date}`;
+              rsvpLogList.appendChild(logItem);
+            });
+          })
+          .catch(error => console.error('Error:', error));
+      })
+      .catch(error => console.error('Error:', error));
+    });
+  </script>
+</body>
+</html>

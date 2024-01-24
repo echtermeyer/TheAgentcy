@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Suggestions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input[type="text"], select, input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        select {
+            height: 40px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .suggestion-list {
+            list-style: none;
+            padding: 0;
+        }
+        .suggestion-item {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Employee Suggestions</h1>
+    <form id="submitForm">
+        <label for="suggestionContent">Suggestion:</label>
+        <input type="text" id="suggestionContent" name="suggestionContent" required>
+        <label for="category">Category:</label>
+        <select id="category" name="category" required>
+            <option value="Technology">Technology</option>
+            <option value="Operations">Operations</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Finance">Finance</option>
+            <option value="Human Resources">Human Resources</option>
+        </select>
+        <label for="anonymous">Anonymous Submission:</label>
+        <input type="checkbox" id="anonymous" name="anonymous">
+        <input type="submit" value="Submit">
+    </form>
+    <div id="categorizedSuggestions">
+        <h2>Categorized Suggestions</h2>
+        <select id="categoryFilter" onchange="getSuggestionsByCategory()">
+            <option value="">Select Category</option>
+            <option value="Technology">Technology</option>
+            <option value="Operations">Operations</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Finance">Finance</option>
+            <option value="Human Resources">Human Resources</option>
+        </select>
+        <ul id="suggestionList" class="suggestion-list"></ul>
+    </div>
+
+    <script>
+        function getSuggestionsByCategory() {
+            const category = document.getElementById('categoryFilter').value;
+            fetch(`http://localhost:8000/get_categorized_suggestions/${category}`)
+                .then(response => response.json())
+                .then(data => {
+                    const suggestionList = document.getElementById('suggestionList');
+                    suggestionList.innerHTML = '';
+                    data.forEach(suggestion => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'suggestion-item';
+                        listItem.innerText = suggestion.suggestion_content;
+                        suggestionList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('submitForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const suggestionContent = document.getElementById('suggestionContent').value;
+            const category = document.getElementById('category').value;
+            const anonymous = document.getElementById('anonymous').checked;
+
+            fetch('http://localhost:8000/submit_suggestion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    suggestion_content: suggestionContent,
+                    category: category,
+                    anonymous_submission: anonymous,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                document.getElementById('suggestionContent').value = '';
+                document.getElementById('category').value = '';
+                document.getElementById('anonymous').checked = false;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>

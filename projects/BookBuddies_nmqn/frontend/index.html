@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Club</title>
+  <style>
+    /* Add your CSS styles here */
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .input-group {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Book Club</h1>
+
+    <h2>Member Management</h2>
+    <div class="input-group">
+      <input type="text" id="memberName" placeholder="Member Name">
+      <input type="email" id="memberEmail" placeholder="Email">
+      <input type="password" id="memberPassword" placeholder="Password">
+      <button onclick="createMember()">Create Member</button>
+    </div>
+
+    <h2>Book Suggestions</h2>
+    <div class="input-group">
+      <input type="text" id="suggestedBy" placeholder="Suggested By (Member ID)">
+      <input type="text" id="bookTitle" placeholder="Book Title">
+      <input type="text" id="bookAuthor" placeholder="Book Author">
+      <input type="date" id="suggestedOn">
+      <button onclick="addBookSuggestion()">Add Book Suggestion</button>
+    </div>
+    <div id="bookSuggestions"></div>
+
+    <h2>Monthly Picks</h2>
+    <div class="input-group">
+      <input type="text" id="bookId" placeholder="Book ID">
+      <input type="date" id="pickedOn">
+      <button onclick="addMonthlyPick()">Add Monthly Pick</button>
+    </div>
+    <div id="monthlyPicks"></div>
+  </div>
+
+  <script>
+    // Add your JavaScript code here
+    function createMember() {
+      const name = document.getElementById('memberName').value;
+      const email = document.getElementById('memberEmail').value;
+      const password = document.getElementById('memberPassword').value;
+
+      // Make POST request to create member
+      // Use fetch or XMLHttpRequest to send data to backend API
+      // Update UI with response message
+    }
+
+    function addBookSuggestion() {
+      const suggestedBy = document.getElementById('suggestedBy').value;
+      const title = document.getElementById('bookTitle').value;
+      const author = document.getElementById('bookAuthor').value;
+      const suggestedOn = document.getElementById('suggestedOn').value;
+
+      // Make POST request to add book suggestion
+      // Use fetch or XMLHttpRequest to send data to backend API
+      // Update UI with response message
+    }
+
+    function getBookSuggestions() {
+      // Make GET request to fetch book suggestions
+      // Use fetch or XMLHttpRequest to get data from backend API
+      // Update UI with the list of book suggestions
+    }
+
+    function deleteBookSuggestion(suggestionId) {
+      // Make DELETE request to delete book suggestion
+      // Use fetch or XMLHttpRequest to send data to backend API
+      // Update UI with response message
+    }
+
+    function addMonthlyPick() {
+      const bookId = document.getElementById('bookId').value;
+      const pickedOn = document.getElementById('pickedOn').value;
+
+      // Make POST request to add monthly pick
+      // Use fetch or XMLHttpRequest to send data to backend API
+      // Update UI with response message
+    }
+
+    function getMonthlyPicks() {
+      // Make GET request to fetch monthly picks
+      // Use fetch or XMLHttpRequest to get data from backend API
+      // Update UI with the list of monthly picks
+    }
+
+    function deleteMonthlyPick(pickId) {
+      // Make DELETE request to delete monthly pick
+      // Use fetch or XMLHttpRequest to send data to backend API
+      // Update UI with response message
+    }
+  </script>
+</body>
+</html>
