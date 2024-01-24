@@ -4,6 +4,18 @@
 
 Before diving into the world of fully automated development of distributed web applications, make sure to follow these steps to get the *Agentcy* project up and running.
 
+### Configuration
+
+Create a `.env` file in the root directory of the project to store your OpenAI key and organization:
+
+```env
+OPENAI_ORG=your-organization
+OPENAI_API_KEY=your-openai-key
+```
+
+Please replace `your-openai-key` and `your-organization` with your actual OpenAI API key and organization details.
+
+
 ### Installation
 
 Agentcy uses Poetry for dependency management. Ensure that you have Poetry installed before proceeding. If not, you can find the installation instructions here: [Poetry Installation](https://python-poetry.org/docs/#installation).
@@ -20,22 +32,30 @@ This command will install all the necessary dependencies for the project. Once t
 poetry shell
 ```
 
+After that you can start the development process with:
+```bash
+python run.py
+``` 
+Additionally, you can use ``-ff`` to skip (fast-forward) the conversation between the user and orchestrator. If you want to disable the GUI and use the terminal only, please use ``-dg``.
+
 Alternatively, you can run the program directly with Poetry:
 
 ```bash
 poetry run python.run
 ```
 
-### Configuration
+### Other commands
 
-Create a `.env` file in the root directory of the project to store your OpenAI key and organization:
+If you want to start the evaluation process, please use:
+```bash
+python evaluate.py -p <project-name>
+```
+This will evaluate the development process with pre-defined project descriptions. You can use ``-i <int>`` to set the amount of test projects used. After the evaluation process is finished, the metrics will be displayed automatically. If you just want to see the metrics without running new project developments, please run:
 
-```env
-OPENAI_ORG=your-organization
-OPENAI_API_KEY=your-openai-key
+```bash
+python evaluate.py -s
 ```
 
-Please replace `your-openai-key` and `your-organization` with your actual OpenAI API key and organization details.
 
 ### Docker Daemon
 

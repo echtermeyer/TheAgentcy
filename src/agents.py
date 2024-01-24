@@ -87,6 +87,7 @@ class Agent:
 
     def __setup_chain(self, model: str, temperature: float) -> LLMChain:
         if self.config["model"] == "gpt-4-vision-preview":
+            # We faced some issues with the vision model, so we had to limit the max tokens
             llm = ChatOpenAI(
                 model_name=model,
                 temperature=temperature,
@@ -98,6 +99,7 @@ class Agent:
                 temperature=temperature,
             )
 
+        # Initialize prompt template
         prompt = ChatPromptTemplate(
             messages=[
                 SystemMessagePromptTemplate.from_template(self.__character),
@@ -109,6 +111,8 @@ class Agent:
         # memory = ConversationBufferMemory(
         #     memory_key="chat_history", return_messages=True
         # )
+
+        # Create memory with window size of 2. This means that the last 2 messages will be returned (HumanMessage and AIMessage)
         memory = ConversationBufferWindowMemory(
             memory_key="chat_history", return_messages=True, k=2
         )
@@ -131,6 +135,7 @@ class Agent:
                 "This message type is not supported. Use one of ['human', 'ai', 'system']"
             )
 
+        # Add message to memory
         self._chain.memory.chat_memory.add_message(message)
 
     def answer(self, message: str, use_vision=False):

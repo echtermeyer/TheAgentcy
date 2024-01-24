@@ -19,19 +19,26 @@ class Pipeline(QObject):
     message_signal = Signal(str, str, bool)  # For communication with GUI thread
     animation_signal = Signal(str)  # layer, status, on/off
 
-    def __init__(self, command_line_args, evaluate_index: int=None):
+    def __init__(self, command_line_args, evaluate_index: int = None):
         super().__init__()
-        self._input = None
-        self._pause_execution = False
+        self._input = None  # Used to store user input from gui threads
+        self._pause_execution = (
+            False  # Used to pause execution until gui thread has responded
+        )
 
         self.root = Path(__file__).parent.parent
-        self.description = command_line_args.description
-        self.fast_forward = command_line_args.fast_forward
-        self.disable_gui = command_line_args.disable_gui
-        self.evaluate_index = evaluate_index
+        self.fast_forward = (
+            command_line_args.fast_forward
+        )  # Whether to skip user interaction with the orchestrator
+        self.disable_gui = (
+            command_line_args.disable_gui
+        )  # Whether to disable GUI and run in terminal only
+        self.evaluate_index = evaluate_index  # Only used for evaluation purposes
 
-        self.__metrics = self.__setup_metrics()
-        self.__setup_agents()
+        self.__metrics = (
+            self.__setup_metrics()
+        )  # Metrics that are collected during the development process
+        self.__setup_agents()  # Create workforce using agents.json
 
     def __transmit_message_signal(self, sender, message, is_question=False):
         print(f"\033[34m{sender}:\033[0m {message}")
@@ -50,7 +57,7 @@ class Pipeline(QObject):
             return self._input
 
     def __transmit_animation_signal(self, text):
-        print(f"\033[32m{text}\033[0m") # green formatting
+        print(f"\033[32m{text}\033[0m")  # green formatting
         self.animation_signal.emit(text)
 
     def receive_from_gui(self, input):
@@ -72,7 +79,7 @@ class Pipeline(QObject):
                 ),
             )
 
-    def __setup_metrics(self) -> dict:            
+    def __setup_metrics(self) -> dict:
         return {
             "project_name": None,
             "time": 0,
@@ -92,14 +99,18 @@ class Pipeline(QObject):
 
     def __create_project_name(self, title: str = "Webapp") -> str:
         # Append 4 random chars at the end of the title, seperated by _
-        project_name = title + "_" + "".join(random.choices(string.ascii_lowercase, k=4))
-        print(f"\033[38;5;208m{'This project will be saved under: /projects/' + project_name}\033[0m")
+        project_name = (
+            title + "_" + "".join(random.choices(string.ascii_lowercase, k=4))
+        )
+        print(
+            f"\033[38;5;208m{'This project will be saved under: /projects/' + project_name}\033[0m"
+        )
         self.project_name = project_name
         return project_name
 
     def start(self) -> None:
         """Start developing process"""
-        # 0. Setup
+        # 0. Setup. Time difference between start and end of development process is measured
         start_time = time.time()
 
         # 0a. Conversation: User & Orchestrator - Retrieve and understand requirements from user
@@ -108,12 +119,14 @@ class Pipeline(QObject):
             system_message = self.orchestrator.get_prompt_text("systemize")
             conversation_task = self.orchestrator.get_prompt_text("conversize")
 
+            # Start conversation with user
             conversation_with_user = HumanConversationWrapper(
                 self.orchestrator,
                 system_message=system_message,
                 conversation_task=conversation_task,
             )
 
+            # Iterate over conversation with user until all requirements are understood
             for ai_message in conversation_with_user:
                 sender, message = ai_message
                 if not conversation_with_user.is_accepted():
@@ -126,13 +139,15 @@ class Pipeline(QObject):
 
             self.title = self.__create_project_name()  # TODO: Use real project title
         else:
-            # Randomly select a predefined use case and add it to the memory of the orchestrator if fast forward is enabled
+            # Load predefined use case
             with open(self.root / "src/setup/summaries_eval.json") as file:
                 summaries = json.load(file)
 
             if self.evaluate_index is None:
+                # Loop through the evaluation use cases
                 summary_key = random.choice(list(summaries.keys()))
             else:
+                # Randomly select a predefined use case
                 summary_key = list(summaries.keys())[self.evaluate_index]
 
             self.__add_metrics("project_name", summary_key)
@@ -250,9 +265,9 @@ class Pipeline(QObject):
                 docker_logs = docker_container.logs(
                     since=timestamp_execution, tail=10
                 ).decode("utf-8")
-                print(f"\033[38;5;208m{'Docker logs:\n'}\033[0m", docker_logs)
+                print(f"\033[38;5;208m{'Docker logs: '}\033[0m", docker_logs)
                 log_string = f"These are the last few log statements that one gets when running the code in a dedicated docker container:\n{docker_logs}"
-            
+
             # Send message, code and docker logs to tester agent
             # if layer is frontend, the tester need the documentation of the backend to check if the dev created one element for each api endpoint
             backend_docs = (
