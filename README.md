@@ -46,6 +46,12 @@ poetry run python.run
 
 ### Other commands
 
+After you created a new project the docker containers are already running. However, if you stopped those containers and want to restart them, you can use:
+```bash
+python start_project.py -p <project-name>
+```
+You just have to specify the project name, which can be found in the projects folder.
+
 If you want to start the evaluation process, please use:
 ```bash
 python evaluate.py -p <project-name>
