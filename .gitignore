@@ -1,9 +1,10 @@
 .vscode/
 .env
 TO_BE_FIXED/
-
+temp.py
 # Stuff that I need to replace poetry
-.my_venv/
+.virtual_env/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
