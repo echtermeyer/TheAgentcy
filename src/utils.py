@@ -42,7 +42,7 @@ def take_screenshot(url: str = "http://localhost:80"):
         temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
         browser.save_screenshot(temp_file.name)
         txt = f"Screenshot saved to {temp_file.name}"
-        print(f"\033[38;5;208m{txt}\033[0m") 
+        print(f"\033[38;5;208m{txt}\033[0m")
 
     finally:
         browser.quit()

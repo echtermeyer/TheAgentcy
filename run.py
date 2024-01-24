@@ -8,10 +8,18 @@ from src.pipeline import Pipeline
 
 
 def run(command_line_args):
+    """
+    Default entry point for the application. If the user passes the -dg flag, the GUI will be disabled and the
+    application will run in terminal only. If the user passes the -ff flag, the application will run in fast-forward
+    mode, meaning that the user interaction with the orchestrator will be skipped and a predefined use-case will be
+    executed.
+    """
     if command_line_args.disable_gui:
+        # Start terminal only
         pipeline = Pipeline(command_line_args)
         pipeline.start()
     else:
+        # Start GUI
         app = QApplication(sys.argv)
         main_window = Gui(command_line_args)
         main_window.show()
@@ -20,14 +28,6 @@ def run(command_line_args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="argparse")
-    parser.add_argument(
-        "-d",
-        "--description",
-        type=str,
-        default="No webapp yet",
-        help="Full-stack webapp description",
-        required=False,
-    )
 
     parser.add_argument(
         "-ff",
