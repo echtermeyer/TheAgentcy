@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from langchain.chains import LLMChain
 from langchain_openai import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory, ConversationBufferWindowMemory
 from langchain.schema.messages import HumanMessage, AIMessage, SystemMessage
 
 from langchain.prompts import (
@@ -106,9 +106,13 @@ class Agent:
             ]
         )
 
-        memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
+        # memory = ConversationBufferMemory(
+        #     memory_key="chat_history", return_messages=True
+        # )
+        memory = ConversationBufferWindowMemory(
+            memory_key="chat_history", return_messages=True, k=2
         )
+
 
         return LLMChain(llm=llm, prompt=prompt, verbose=False, memory=memory)
 
